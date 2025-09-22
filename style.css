@@ -329,86 +329,99 @@ html, body {
   }
 }
 
-/* Bottom nav */
+/* ===== Bottom nav (pill, centered) ===== */
+:root{
+  --nav-offset: 16px;       /* distance from bottom */
+  --nav-height: 72px;       /* a bit taller for phone-like feel */
+  --nav-width: clamp(260px, 60vw, 360px); /* responsive pill width */
+  --icon-size: 30px;        /* common app icon size */
+  --active: #1976d2;
+  --muted: #555;
+  --border: #ccc;
+}
+
 .bottom-nav {
   position: fixed;
-  bottom: 16px; /* distance from bottom of viewport */
+  bottom: var(--nav-offset);
   left: 50%;
   transform: translateX(-50%);
-  background: white;
-  border: 1px solid #ccc;
+  background: #fff;
+  border: 1px solid var(--border);
   border-radius: 9999px;
   display: flex;
-  justify-content: space-around;
   align-items: center;
-  width: 220px;
-  height: 60px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+  justify-content: space-between;   /* even spacing across the pill */
+  width: var(--nav-width);
+  height: var(--nav-height);
+  padding: 0 10px;                  /* little breathing room left/right */
+  box-shadow: 0 4px 10px rgba(0,0,0,.15);
   z-index: 50;
-  transition: all 0.2s ease;
+  transition: transform .2s ease, box-shadow .2s ease;
 }
 
-/* Push page content above navbar */
+/* Push page content above navbar (height + offset + tiny buffer) */
 body, #main-content {
-  padding-bottom: 80px; /* navbar height (60px) + bottom offset (16px) + extra 16px */
+  padding-bottom: calc(var(--nav-height) + var(--nav-offset) + 12px);
 }
 
+/* Each button takes equal width so labels don't shift icons */
 .bottom-nav button {
+  flex: 1 1 0;                      /* <- equal columns */
+  min-width: 0;                     /* allow flex shrink */
   background: none;
   border: none;
   cursor: pointer;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: center;              /* center icon+label within each column */
   justify-content: center;
-  transition: transform 0.15s ease;
+  gap: 3px;
+  padding: 6px 0;                   /* touch target padding */
+  transition: transform .15s ease;
+  text-align: center;
+  white-space: nowrap;              /* keep labels on one line */
 }
 
-.bottom-nav button:hover {
-  transform: scale(1.1);
-}
+.bottom-nav button:hover { transform: scale(1.06); }
 
 .bottom-nav button svg {
-  width: 28px;
-  height: 28px;
-  fill: #555;
-  transition: fill 0.15s ease;
-}
-
-.bottom-nav button.active svg {
-  fill: #1976d2; /* Active color */
+  width: var(--icon-size);
+  height: var(--icon-size);
+  display: block;
+  fill: var(--muted);
+  transition: fill .15s ease;
 }
 
 .bottom-nav button span {
-  font-size: 11px;
-  color: #555;
+  font-size: 12px;                  /* slightly larger label for readability */
+  color: var(--muted);
+  line-height: 1;
   margin-top: 2px;
-  transition: color 0.15s ease;
+  transition: color .15s ease;
 }
 
+.bottom-nav button.active svg,
 .bottom-nav button.active span {
-  color: #1976d2;
+  fill: var(--active);
+  color: var(--active);
 }
 
-/* Mobile touch-friendly padding */
+/* Small phones */
 @media (max-width: 400px) {
-  .bottom-nav {
-    width: 180px;
-    height: 50px;
+  :root{
+    --nav-height: 68px;
+    --nav-width: clamp(220px, 70vw, 320px);
+    --icon-size: 28px;
   }
-  .bottom-nav button svg {
-    width: 24px;
-    height: 24px;
-  }
-  .bottom-nav button span {
-    font-size: 9px;
-  }
-
-  body, #main-content {
-    padding-bottom: 82px; /* adjust for smaller navbar */
-  }
+  .bottom-nav button span { font-size: 11px; }
 }
 
+/* Larger screens - give it a touch more presence */
+@media (min-width: 768px) {
+  :root{
+    --nav-width: clamp(300px, 40vw, 420px);
+  }
+}
 
 
 /*loading dots blinking*/
