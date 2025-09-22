@@ -1,16 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>HSAAS On-Call Doctor Dashboard</title>
-  <link rel="stylesheet" href="style.css"/>
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#1976d2">
-  <link rel="icon" href="data:,">
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.3/dist/tailwind.min.css" rel="stylesheet">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ROSTER FILE VIEWER</title>
+  <link rel="stylesheet" href="fileviewer_style.css">
 
-  <!-- at top of the page (head or very top of body) -->
+  <script src="fileviewer.js" defer></script>
+  <!-- Load Google API -->
+  <script async defer src="https://apis.google.com/js/api.js"
+          onload="gapiLoaded()"></script>
+
+    <!-- at top of the page (head or very top of body) -->
   <script defer src="./auth/auth-config.js"></script>
   <script defer src="./auth/auth.js"></script>
   <script>
@@ -37,37 +38,28 @@
   </script>
 
 </head>
-<body>
 
+<body>
   <header id="app-header">
     <img src="icons/logo.png" alt="Logo" id="logo">
-    <h1 class="header-title">HSAAS <br> On-Call Doctors</h1>
-    <div id="header-date"></div>
-    <div id="data-source" style="font-size: 0.7em; color: rgb(255, 255, 255); margin-top: 5px;">
-    ⏳ Data Source: Loading<span class="dots"></span></div>
+    <h1 class="header-title">📂 ALL ROSTERS</h1>
+    <nav id="breadcrumb"></nav>
   </header>
 
-  <main id="doctor-list">
+  <main>
+    <div id="file-list" class="grid"></div>
   </main>
 
-  <footer id="app-footer">
-    <small id="last-updated"></small><br>
-    <small>&copy; Dr. Muhammad Afif Abdullah 2025</small>
-  </footer>
+  <!-- File viewer modal -->
+  <div id="viewer-modal" class="modal hidden">
+  <div class="modal-content">
+    <span id="close-viewer">❌</span>
+    <iframe id="file-viewer" frameborder="0"></iframe>
+  </div>
+</div>
 
-  <script src="script.js"></script>
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', function () {
-        navigator.serviceWorker.register('./service-worker.js')
-          .then(reg => console.log('ServiceWorker registered:', reg.scope))
-          .catch(err => console.log('SW registration failed:', err));
-      });
-    }
-  </script>
-  
   <div class="bottom-nav">
-    <button onclick="location.href='fileviewer.html'">
+    <button class="active" onclick="location.href='fileviewer.html'">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
             viewBox="0 0 24 24" fill="none" stroke="white"
             stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
@@ -76,9 +68,9 @@
         <path d="M14 2v6h6"/>
         </svg>
         <span>File</span>
-    </button>
+      </button>
 
-    <button class="active" onclick="location.href='index.html'">
+    <button onclick="location.href='index.html'">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
         <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
       </svg>

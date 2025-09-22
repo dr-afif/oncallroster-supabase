@@ -1,0 +1,244 @@
+/* General reset */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  font-family: 'Segoe UI', Tahoma, sans-serif;
+  background: #f7f9fc;
+  color: #222;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  padding-bottom: 80px;
+  margin: 0;
+  padding: 0;
+}
+
+/* Header - centered with stacked layout */
+#app-header {
+  background: linear-gradient(90deg, #1976d2, #2196f3);
+  color: white;
+  padding: 1rem;
+  text-align: center;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+#logo {
+  height: 100px; /* slightly smaller than before */
+  width: auto;
+  margin-bottom: 0.5rem;
+}
+
+.header-title {
+  font-size: 2rem; /* smaller than before */
+  font-weight: 600;
+  margin-bottom: 0.3rem;
+}
+
+#header-date {
+  font-size: 1.5rem;
+  opacity: 0.9;
+}
+
+
+/* Target the existing breadcrumb container */
+#breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 14px;
+  font-family: system-ui, sans-serif;
+  cursor: pointer;
+}
+
+/* Links inside breadcrumb */
+#breadcrumb a {
+  text-decoration: none;
+  color: #2563eb; /* blue-600 */
+  background: #f1f5f9; /* slate-100 */
+  padding: 4px 10px;
+  border-radius: 9999px; /* pill */
+  transition: all 0.2s ease;
+  
+}
+
+#breadcrumb a:hover {
+  background: #e0e7ff; /* indigo-100 */
+  color: #1e40af; /* indigo-800 */
+}
+
+/* Separator (›) */
+#breadcrumb span {
+  color: #94a3b8; /* slate-400 */
+  font-size: 16px;
+}
+
+/* Last item = current */
+#breadcrumb span:last-child {
+  font-weight: 600;
+  color: #0f172a; /* slate-900 */
+  background: #e2e8f0; /* slate-200 */
+  padding: 4px 10px;
+  border-radius: 9999px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.file-card {
+  background: white;
+  border-radius: 8px;
+  padding: 1rem;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  cursor: pointer;
+  text-align: center;
+  transition: transform .1s;
+}
+.file-card:hover {
+  transform: scale(1.03);
+}
+.file-icon, .folder-icon {
+  font-size: 2rem;
+  margin-bottom: .5rem;
+}
+.file-name {
+  font-size: 0.9rem;
+  word-wrap: break-word;
+}
+
+/* Modal */
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.modal.hidden {
+  display: none;
+}
+.modal-content {
+  background: white;
+  border-radius: 8px;
+  width: 90%;
+  height: 90%;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 80px; /* same padding as body/#main-content */
+}
+#close-viewer {
+  align-self: flex-end;
+  border: none;
+  background: transparent;
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+#file-viewer {
+  flex: 1;
+  width: 100%;
+  margin-bottom: 80px; /* ensures viewer content never overlaps nav */
+  box-sizing: border-box;
+}
+
+.file-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 140px;
+  margin: 10px;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform 0.2s;
+  background: #fafafa;
+}
+
+.file-card:hover {
+  transform: scale(1.05);
+  background: #f0f0f0;
+}
+
+.file-thumb {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 6px;
+  margin-bottom: 6px;
+}
+
+.folder-thumb {
+  font-size: 48px;
+  margin-bottom: 6px;
+}
+
+.file-name {
+  text-align: center;
+  font-size: 14px;
+  word-break: break-word;
+}
+
+/* Bottom nav */
+.bottom-nav {
+  position: fixed;
+  bottom: 16px; /* distance from bottom of viewport */
+  left: 50%;
+  transform: translateX(-50%);
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 9999px;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  width: 220px;
+  height: 60px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+  z-index: 50;
+  transition: all 0.2s ease;
+}
+
+/* Push page content above navbar */
+body, #main-content {
+  padding-bottom: 80px; /* navbar height (60px) + bottom offset (16px) + extra 16px */
+}
+
+.bottom-nav button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s ease;
+}
+
+.bottom-nav button:hover {
+  transform: scale(1.1);
+}
+
+.bottom-nav button svg {
+  width: 28px;
+  height: 28px;
+  fill: #555;
+  transition: fill 0.15s ease;
+}
+
+.bottom-nav button.active svg {
+  fill: #1976d2; /* Active color */
+}
+
+.bottom-nav button span {
+  font-size: 11px;
+  color: #555;
+  margin-top: 2px;
+  transition: color 0.15s ease;
+}
+
+.bottom-nav button.active span {
+  color: #1976d2;
+}
