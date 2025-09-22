@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Signing you in…</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+</head>
+<body>
+  <p>Completing sign-in…</p>
+
+  <script src="./auth/auth-config.js"></script>
+  <script src="./auth/auth.js"></script>
+  <script>
+    (async () => {
+      try {
+        await Auth.handleRedirectIfNeeded();
+      } catch (e) {
+        console.error('Auth0 callback error:', e);
+      } finally {
+        const next = sessionStorage.getItem('post_login_redirect') || window.__AUTH0_CONFIG__.postLoginRedirect || './index.html';
+        sessionStorage.removeItem('post_login_redirect');
+        location.replace(next);
+      }
+    })();
+  </script>
+</body>
+</html>

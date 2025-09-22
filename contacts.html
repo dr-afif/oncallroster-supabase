@@ -5,6 +5,33 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Contacts</title>
   <link rel="stylesheet" href="contacts.css">
+
+  <!-- at top of the page (head or very top of body) -->
+  <script defer src="./auth/auth-config.js"></script>
+  <script defer src="./auth/auth.js"></script>
+  <script>
+    (async () => {
+      // wait for Auth to exist
+      if (!window.Auth) {
+        await new Promise((resolve, reject) => {
+          let tries=0; const iv=setInterval(()=> {
+            if (window.Auth) { clearInterval(iv); resolve(); }
+            else if (++tries>300) { clearInterval(iv); reject(new Error("Auth not loaded")); }
+          }, 20);
+        });
+      }
+      await Auth.initAuth();
+
+      // IMPORTANT: With localstorage cache, this will remain true after navs
+      const authed = await Auth.isAuthenticated();
+      if (!authed) {
+        const ret = location.pathname + location.search + location.hash;
+        sessionStorage.setItem('post_login_redirect', ret);
+        location.replace(window.__AUTH0_CONFIG__.publicLoginPage || './login.html');
+      }
+    })();
+  </script>
+
 </head>
 <body>
   <header id="app-header">
@@ -40,6 +67,7 @@
         <span>Contacts</span>
         </button>
     </div>
+
 
 </body>
 </html>
