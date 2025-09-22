@@ -67,8 +67,9 @@
     }
   </script>
   
-  <div class="bottom-nav">
+  <nav class="bottom-nav">
     <button onclick="location.href='fileviewer.html'">
+      <div class="stack">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
             viewBox="0 0 24 24" fill="none" stroke="white"
             stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
@@ -77,22 +78,27 @@
         <path d="M14 2v6h6"/>
         </svg>
         <span>File</span>
+      </div>
     </button>
 
     <button class="active" onclick="location.href='index.html'">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-        <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
-      </svg>
+      <div class="stack">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+          <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+        </svg>
       <span>Home</span>
+      </div>
     </button>
 
     <button onclick="location.href='contacts.html'">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-        <path d="M12 12c2.7 0 4.5-1.8 4.5-4.5S14.7 3 12 3 7.5 4.8 7.5 7.5 9.3 12 12 12zm0 2c-3 0-9 1.5-9 4.5V21h18v-2.5c0-3-6-4.5-9-4.5z"/>
-      </svg>
-      <span>Contacts</span>
+      <div class="stack">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+          <path d="M12 12c2.7 0 4.5-1.8 4.5-4.5S14.7 3 12 3 7.5 4.8 7.5 7.5 9.3 12 12 12zm0 2c-3 0-9 1.5-9 4.5V21h18v-2.5c0-3-6-4.5-9-4.5z"/>
+        </svg>
+        <span>Contacts</span>
+      </div>
     </button>
-  </div>
+  </nav>
 
 </body>
 </html>

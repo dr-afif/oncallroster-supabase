@@ -1,3 +1,7 @@
+/* Stop page-level globals from leaking in */
+.bottom-nav, .bottom-nav * { box-sizing: border-box; }
+.bottom-nav button, .bottom-nav button * { margin: 0; padding: 0; }
+
 /* ===== Shared Bottom Navigation ===== */
 :root {
   --nav-offset: 16px;       /* distance from bottom */
@@ -9,7 +13,7 @@
   --border: #ccc;
 }
 
-/* The pill container */
+/* Container: fixed size + 3 equal tracks */
 .bottom-nav {
   position: fixed;
   bottom: var(--nav-offset);
@@ -18,60 +22,60 @@
   background: #fff;
   border: 1px solid var(--border);
   border-radius: 9999px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
   width: var(--nav-width);
   height: var(--nav-height);
   padding: 0 10px;
   box-shadow: 0 4px 10px rgba(0,0,0,.15);
   z-index: 50;
-  transition: transform .2s ease, box-shadow .2s ease;
+
+  /* 🔒 Equal columns (no “space-between” artifacts) */
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: center;
+  column-gap: 0;
 }
 
-/* Prevent content overlap */
+/* Prevent overlap with page content */
 body, #main-content {
   padding-bottom: calc(var(--nav-height) + var(--nav-offset) + 12px);
 }
 
-/* Each button: equal width, centered */
+/* Each button fills its grid cell and centers its content */
 .bottom-nav button {
-  flex: 1 1 0;
-  min-width: 0;
-  background: none;
-  border: none;
+  all: unset;                /* reset page/global button styles */
+  grid-column: span 1;
+  width: 100%;
+  height: 100%;
   cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 3px;
-  padding: 6px 0;
-  transition: transform .15s ease;
+
+  display: grid;
+  place-items: center;       /* centers icon+label as a block */
+  padding: 0;
   text-align: center;
-  white-space: nowrap;
 }
 
-.bottom-nav button:hover { transform: scale(1.06); }
+/* Stack icon over label */
+.bottom-nav button .stack {
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 3px;
+}
 
-/* Icon */
+/* Icon & label */
 .bottom-nav button svg {
   width: var(--icon-size);
   height: var(--icon-size);
+  flex-shrink: 0;
   fill: var(--muted);
-  transition: fill .15s ease;
 }
 
-/* Label */
 .bottom-nav button span {
   font-size: 12px;
-  color: var(--muted);
   line-height: 1;
-  margin-top: 2px;
-  transition: color .15s ease;
+  color: var(--muted);
 }
 
-/* Active state */
 .bottom-nav button.active svg,
 .bottom-nav button.active span {
   fill: var(--active);
@@ -90,5 +94,7 @@ body, #main-content {
 
 /* Larger screens */
 @media (min-width: 768px) {
-  :root { --nav-width: clamp(300px, 40vw, 420px); }
+  :root {
+    --nav-width: clamp(300px, 40vw, 420px);
+  }
 }
