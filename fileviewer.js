@@ -4,6 +4,7 @@ const ROOT_FOLDER_ID = "19hxtBDM7U6IRepoEZiOHVG2MK_erNdrk"; // your shared folde
 
 // Elements
 const fileList = document.getElementById("file-list");
+const loaderWrapper = document.getElementById("file-loader");
 const modal = document.getElementById("viewer-modal");
 const closeViewer = document.getElementById("close-viewer");
 const viewer = document.getElementById("file-viewer");
@@ -12,6 +13,24 @@ const breadcrumb = document.getElementById("breadcrumb");
 let folderStack = [{ id: ROOT_FOLDER_ID, name: "Shared Folder" }];
 
 console.log("✅ script.js loaded");
+function showLoader() {
+  if (loaderWrapper) {
+    loaderWrapper.classList.remove("is-hidden");
+  }
+  if (fileList) {
+    fileList.classList.add("is-hidden");
+  }
+}
+
+function hideLoader() {
+  if (loaderWrapper) {
+    loaderWrapper.classList.add("is-hidden");
+  }
+  if (fileList) {
+    fileList.classList.remove("is-hidden");
+  }
+}
+
 
 // make gapiLoaded a property of window so onload can call it
 window.gapiLoaded = function() {
@@ -30,7 +49,8 @@ async function initializeGapiClient() {
 }
 
 async function listFiles(folderId) {
-  fileList.innerHTML = "Loading...";
+  showLoader();
+  fileList.innerHTML = "";
 
   try {
     const response = await gapi.client.drive.files.list({
@@ -40,11 +60,12 @@ async function listFiles(folderId) {
       fields: "files(id, name, mimeType, webViewLink, iconLink, thumbnailLink)"
     });
 
-    const files = response.result.files;
-    fileList.innerHTML = "";
+    const files = response.result.files || [];
 
-    if (!files || files.length === 0) {
-      fileList.innerHTML = "No files here.";
+    hideLoader();
+
+    if (files.length === 0) {
+      fileList.textContent = "No files here.";
       return;
     }
 
@@ -54,14 +75,14 @@ async function listFiles(folderId) {
 
       if (file.mimeType === "application/vnd.google-apps.folder") {
         div.innerHTML = `
-          <div class="folder-thumb">📁</div>
+          <div class="folder-thumb">dY"?</div>
           <div class="file-name">${file.name}</div>
         `;
         div.onclick = () => enterFolder(file);
       } else {
         const thumb = file.thumbnailLink
           ? `<img src="${file.thumbnailLink}" alt="thumb" class="file-thumb" />`
-          : `<div class="file-icon">📄</div>`;
+          : `<div class="file-icon">dY",</div>`;
 
         div.innerHTML = `
           ${thumb}
@@ -76,7 +97,8 @@ async function listFiles(folderId) {
     updateBreadcrumb();
   } catch (err) {
     console.error(err);
-    fileList.innerHTML = "❌ Error loading files.";
+    hideLoader();
+    fileList.textContent = "Error loading files.";
   }
 }
 
@@ -116,3 +138,6 @@ closeViewer.onclick = () => {
   modal.classList.add("hidden");
   viewer.src = "";
 };
+
+
+
