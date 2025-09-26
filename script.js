@@ -122,7 +122,7 @@ async function fetchSnapshotData() {
 }
 
 async function loadDashboard() {
-  showLoading("Loading snapshot first... then refreshing from server if available");
+  showLoading("Loading snapshot data...");
 
   const container = document.getElementById('doctor-list');
   if (!container) return;
@@ -141,25 +141,25 @@ async function loadDashboard() {
     document.getElementById("data-source").textContent = "📂 Data Source: Snapshot (GitHub)";
   }
 
-  // 2. Then try backend (refresh if successful)
-  try {
-    const [timetable, contacts] = await Promise.all([
-      fetchSheetData('timetable'),
-      fetchSheetData('contacts')
-    ]);
-
-    if (timetable && contacts) {
-      setCachedData(todayStr, { timetable, contacts });
-      renderDashboard(timetable, contacts);
-      updateLastUpdatedTime();
-      document.getElementById("data-source").textContent = "🌐 Data Source: Live Backend";
-    } else {
-      console.warn("Backend fetch failed, keeping snapshot/cache.");
-    }
-  } catch (err) {
-    console.error("Backend fetch error:", err);
-    // fallback already shown (snapshot or cache)
-  }
+  // 2. Backend refresh disabled to limit server requests (kept for future use).
+//   try {
+//     const [timetable, contacts] = await Promise.all([
+//       fetchSheetData('timetable'),
+//       fetchSheetData('contacts')
+//     ]);
+// 
+//     if (timetable && contacts) {
+//       setCachedData(todayStr, { timetable, contacts });
+//       renderDashboard(timetable, contacts);
+//       updateLastUpdatedTime();
+//       document.getElementById("data-source").textContent = "🌐 Data Source: Live Backend";
+//     } else {
+//       console.warn("Backend fetch failed, keeping snapshot/cache.");
+//     }
+//   } catch (err) {
+//     console.error("Backend fetch error:", err);
+//     // fallback already shown (snapshot or cache)
+//   }
 }
 
 
@@ -267,6 +267,7 @@ function buildDashboardHTML(timetable, contacts) {
 
 document.addEventListener('DOMContentLoaded', loadDashboard);
 
+/*
 // -----------------------------
 // Background prefetch contacts
 // -----------------------------
@@ -314,6 +315,8 @@ document.addEventListener('DOMContentLoaded', () => {
   preloadContacts();
 });
 
+
+*/
 
 function showUpdateToast() {
   const toast = document.createElement('div');
