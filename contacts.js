@@ -131,7 +131,7 @@ function processRawContacts(rawData) {
 // Fetch contacts (similar structure to index.js)
 // -----------------------------
 async function fetchContacts() {
-  showLoading("Loading contacts... please check your connection if this takes too long.");
+  showLoading("Loading contacts snapshot... please check your connection if this takes too long.");
   
   const container = document.getElementById('departments');
   if (!container) return;
@@ -176,55 +176,73 @@ async function fetchContacts() {
     console.warn("Snapshot fetch failed:", e);
   }
 
-  // 3. Try live backend fetch
-  try {
-    const res = await fetch(SHEET_URL);
-    if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-    
-    const data = await res.json();
-    
-    // Handle different response structures
-    let contacts;
-    if (data.values) {
-      // Raw spreadsheet format from backend
-      contacts = processRawContacts(data.values);
-    } else {
-      // Pre-processed format
-      contacts = data.contacts || data;
+  // 3. Backend refresh disabled to limit server requests (kept for future use).
+//  try {
+//    const res = await fetch(SHEET_URL);
+//    if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+//    
+//    const data = await res.json();
+//    
+//    // Handle different response structures
+//    let contacts;
+//    if (data.values) {
+//      // Raw spreadsheet format from backend
+//      contacts = processRawContacts(data.values);
+//    } else {
+//      // Pre-processed format
+//      contacts = data.contacts || data;
+//    }
+//    
+//    if (contacts && contacts.length > 0) {
+//      // Clear timeout since we got fresh data
+//      if (container.timeoutId) {
+//        clearTimeout(container.timeoutId);
+//      }
+//      
+//      renderDepartments(contacts);
+//      updateDataSource(`🌐 Data Source: Live Backend (${formatTimestampAsDDMMYYYY(Date.now(), true)})`);
+//      setCachedData('contactsData', contacts);
+//    }
+//  } catch (error) {
+//    console.error('Live backend fetch failed:', error);
+//    
+//    if (!snapshotUsed && !cached) {
+//      // No fallback data available
+//      if (container.timeoutId) {
+//        clearTimeout(container.timeoutId);
+//      }
+//      container.innerHTML = `
+//        <div style="text-align:center; padding: 2rem;">
+//          <p>⚠️ Unable to load contacts</p>
+//          <p style="font-size: 0.9em; color: #666; margin-top: 0.5rem;">
+//            Please check your internet connection and try again.
+//          </p>
+//          <button onclick="fetchContacts()" style="margin-top: 1rem; padding: 0.5rem 1rem; background: #1976d2; color: white; border: none; border-radius: 4px; cursor: pointer;">
+//            Retry
+//          </button>
+//        </div>
+//      `;
+//      updateDataSource("❌ Failed to load");
+//    }
+//  }
+  if (!snapshotUsed && !cached) {
+    if (container.timeoutId) {
+      clearTimeout(container.timeoutId);
     }
-    
-    if (contacts && contacts.length > 0) {
-      // Clear timeout since we got fresh data
-      if (container.timeoutId) {
-        clearTimeout(container.timeoutId);
-      }
-      
-      renderDepartments(contacts);
-      updateDataSource(`🌐 Data Source: Live Backend (${formatTimestampAsDDMMYYYY(Date.now(), true)})`);
-      setCachedData('contactsData', contacts);
-    }
-  } catch (error) {
-    console.error('Live backend fetch failed:', error);
-    
-    if (!snapshotUsed && !cached) {
-      // No fallback data available
-      if (container.timeoutId) {
-        clearTimeout(container.timeoutId);
-      }
-      container.innerHTML = `
-        <div style="text-align:center; padding: 2rem;">
-          <p>⚠️ Unable to load contacts</p>
-          <p style="font-size: 0.9em; color: #666; margin-top: 0.5rem;">
-            Please check your internet connection and try again.
-          </p>
-          <button onclick="fetchContacts()" style="margin-top: 1rem; padding: 0.5rem 1rem; background: #1976d2; color: white; border: none; border-radius: 4px; cursor: pointer;">
-            Retry
-          </button>
-        </div>
-      `;
-      updateDataSource("❌ Failed to load");
-    }
+    container.innerHTML = `
+      <div style="text-align:center; padding: 2rem;">
+        <p>Warning: Unable to load contacts</p>
+        <p style="font-size: 0.9em; color: #666; margin-top: 0.5rem;">
+          Please check your internet connection and try again.
+        </p>
+        <button onclick="fetchContacts()" style="margin-top: 1rem; padding: 0.5rem 1rem; background: #1976d2; color: white; border: none; border-radius: 4px; cursor: pointer;">
+          Retry
+        </button>
+      </div>
+    `;
+    updateDataSource("Warning: Failed to load");
   }
+
 }
 
 // -----------------------------
@@ -374,3 +392,4 @@ document.addEventListener('visibilitychange', () => {
     }
   }
 });
+
