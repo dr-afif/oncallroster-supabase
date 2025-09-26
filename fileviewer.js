@@ -75,14 +75,14 @@ async function listFiles(folderId) {
 
       if (file.mimeType === "application/vnd.google-apps.folder") {
         div.innerHTML = `
-          <div class="folder-thumb">dY"?</div>
+          <div class="folder-thumb">📁</div>
           <div class="file-name">${file.name}</div>
         `;
         div.onclick = () => enterFolder(file);
       } else {
         const thumb = file.thumbnailLink
           ? `<img src="${file.thumbnailLink}" alt="thumb" class="file-thumb" />`
-          : `<div class="file-icon">dY",</div>`;
+          : `<div class="file-icon">📁</div>`;
 
         div.innerHTML = `
           ${thumb}
