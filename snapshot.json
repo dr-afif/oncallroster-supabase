@@ -1,5 +1,5 @@
 {
-  "last_updated": "26-09-2025",
+  "last_updated": "27-09-2025",
   "timetable": {
     "range": "Timetable!A2:AK1000",
     "majorDimension": "ROWS",
@@ -1680,7 +1680,7 @@
       [
         "26/09/2025",
         "ADI\nASYRAAF",
-        "AZRUL\nSYU\nMUAZ",
+        "AZRUL\nSYUHADA\nMUAZ",
         "AIMAN\nADLI",
         "SOLIHA",
         "TAN",
