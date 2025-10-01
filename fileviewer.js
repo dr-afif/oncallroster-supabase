@@ -13,6 +13,26 @@ const breadcrumb = document.getElementById("breadcrumb");
 let folderStack = [{ id: ROOT_FOLDER_ID, name: "Shared Folder" }];
 
 console.log("✅ script.js loaded");
+
+function highlightSecondWord(name) {
+  const escaped = String(name).replace(/[&<>"']/g, ch => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+  })[ch]);
+
+  const words = escaped.split(/\s+/);
+
+  if (words.length < 2) {
+    return escaped;
+  }
+
+  words[1] = `<span class="file-name__accent">${words[1]}</span>`;
+  return words.join(' ');
+}
+
 function showLoader() {
   if (loaderWrapper) {
     loaderWrapper.classList.remove("is-hidden");
@@ -72,11 +92,12 @@ async function listFiles(folderId) {
     files.forEach(file => {
       const div = document.createElement("div");
       div.className = "file-card";
+      const nameMarkup = highlightSecondWord(file.name);
 
       if (file.mimeType === "application/vnd.google-apps.folder") {
         div.innerHTML = `
           <div class="folder-thumb">📁</div>
-          <div class="file-name">${file.name}</div>
+          <div class="file-name">${nameMarkup}</div>
         `;
         div.onclick = () => enterFolder(file);
       } else {
@@ -86,7 +107,7 @@ async function listFiles(folderId) {
 
         div.innerHTML = `
           ${thumb}
-          <div class="file-name">${file.name}</div>
+          <div class="file-name">${nameMarkup}</div>
         `;
         div.onclick = () => openViewer(file);
       }
@@ -138,6 +159,4 @@ closeViewer.onclick = () => {
   modal.classList.add("hidden");
   viewer.src = "";
 };
-
-
 
