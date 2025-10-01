@@ -23,14 +23,19 @@ function highlightSecondWord(name) {
     "'": '&#39;',
   })[ch]);
 
-  const words = escaped.split(/\s+/);
+  const words = escaped.trim().split(/\s+/).filter(Boolean);
 
   if (words.length < 2) {
     return escaped;
   }
 
-  words[1] = `<span class="file-name__accent">${words[1]}</span>`;
-  return words.join(' ');
+  const [first, second, ...rest] = words;
+  let markup = `${first}<br><span class="file-name__accent">${second}</span>`;
+  if (rest.length) {
+    markup += `<br>${rest.join(' ')}`;
+  }
+
+  return markup;
 }
 
 function showLoader() {
@@ -159,4 +164,3 @@ closeViewer.onclick = () => {
   modal.classList.add("hidden");
   viewer.src = "";
 };
-
