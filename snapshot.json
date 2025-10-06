@@ -39,7 +39,12 @@
         "MICROBIOLOGY MOLECULAR / SEROLOGY (OFFICE HOUR)",
         "MICROBIOLOGY BACTERIOLOGY (OFFICE HOUR)",
         "HISTOCYTOLOGY ONCALL",
-        "RADIOLOGY ONCALL"
+        "RADIOLOGY ONCALL",
+        "RADIOLOGY USG (OFFICE HOUR)",
+        "RADIOLOGY REPORTING VETTING (OFFICE HOUR)",
+        "RADIOLOGY CT (OFFICE HOUR)",
+        "RADIOLOGY MRI (OFFICE HOUR)",
+        "RADIOLOGY ANGIO (OFFICE HOUR)"
       ],
       [
         "01/08/2025",
@@ -2469,7 +2474,12 @@
         "MUADZ",
         "SYAZANA\nRAIHANAH\n",
         "MAYA IRADAH",
-        "AMIRUN"
+        "ZAIYAN",
+        "TAN GX\nYUQI",
+        "SYAZWANI",
+        "AZRINA\nAMIRUN",
+        "TASNEEM\nZAIYAN",
+        "AQILAH\nERWAN"
       ],
       [
         "07/10/2025",
@@ -2506,7 +2516,12 @@
         "MUADZ",
         "SYAZANA\nHAZIRAH\nRAIHANAH",
         "NURFARAHANI",
-        "ZAIYAN"
+        "AMIRUN",
+        "NAQIB\nSYAZWANI",
+        "ZAIYAN",
+        "TAN ZX\nAZRINA\nSU FANG",
+        "AMIRUN\nDENNIS",
+        "AQILAH\nERWAN"
       ],
       [
         "08/10/2025",
@@ -2543,7 +2558,12 @@
         "MUADZ",
         "SYAZANA\nHAZIRAH\nRAIHANAH\n",
         "SITI KHADIJAH",
-        "TAN GX"
+        "TAN GX",
+        "NAQIB\nYUQI",
+        "AMIRUN",
+        "TASNEEM\nDENNIS\nATIQAH",
+        "MALIQ\nTAN GX\nTAN ZX",
+        "AQILAH\nHASIF"
       ],
       [
         "09/10/2025",
@@ -2580,7 +2600,12 @@
         "MUADZ",
         "SYAZANA\nHAZIRAH\nRAIHANAH\n",
         "ZAHIRAH",
-        "AQILAH"
+        "TASNEEM",
+        "AMIRUN\nSYAZWANI",
+        "TAN GX",
+        "MALIQ\nTAN ZX\nATIQAH\nNURUL",
+        "TASNEEM\nDENNIS\nHASIF",
+        "AQILAH\nERWAN"
       ],
       [
         "10/10/2025",
@@ -2617,7 +2642,12 @@
         "MUADZ",
         "SYAZANA\nHAZIRAH\nRAIHANAH\n",
         "NIK NABILAH",
-        "AZIMAH"
+        "AZIEMAH",
+        "AMIRUN\nSYAZWANI\nSU FANG",
+        "TASNEEM",
+        "TAN GX\nDENNIS\nATIQAH\nHASIF\nZAIYAN",
+        "MALIQ\nTAN ZA\nNURULX",
+        "AQILAH\nERWAN"
       ],
       [
         "11/10/2025",
@@ -2654,7 +2684,7 @@
         "",
         "",
         "NURFARAHANI",
-        "HANAFIZAWATI"
+        "NURUL"
       ],
       [
         "12/10/2025",
