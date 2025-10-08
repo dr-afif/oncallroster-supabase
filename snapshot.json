@@ -1,5 +1,5 @@
 {
-  "last_updated": "07-10-2025",
+  "last_updated": "08-10-2025",
   "timetable": {
     "range": "Timetable!A2:AR1000",
     "majorDimension": "ROWS",
@@ -2551,9 +2551,9 @@
         "ZULAIKHA",
         "SYUAIDI",
         "NISHA",
-        "MAHFUZAH",
+        "FARHAS\nMAHFUZAH",
         "HUMAIRAH\nKHAIR\nAUFA",
-        "MARYAM\nNISHA\nFARHAS\n",
+        "MARYAM\nNISHA",
         "MUADZ",
         "MUADZ",
         "SYAZANA\nHAZIRAH\nRAIHANAH\n",
