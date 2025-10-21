@@ -1,5 +1,5 @@
 {
-  "last_updated": "20-10-2025",
+  "last_updated": "21-10-2025",
   "timetable": {
     "range": "Timetable!A2:AR1000",
     "majorDimension": "ROWS",
@@ -3072,9 +3072,9 @@
         "SAIFUL",
         "WILSON",
         "ADAM",
-        "MAHFUZAH",
+        "FARHAS",
         "HUMAIRAH\nKHAIR\nAUFA",
-        "MARYAM\nNISHA\nFARHAS\n",
+        "MARYAM\n",
         "SYAZANA",
         "HAZIRAH",
         "RAIHANAH\nMUADZ\nSYAZANA\n",
