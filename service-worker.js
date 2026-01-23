@@ -1,6 +1,8 @@
-const CACHE_NAME = "roster-cache-v6"; // bump version to take effect
+const CACHE_NAME = "roster-cache-v14"; // Bumped for logo resizing
 const urlsToCache = [
   "./",
+  "./config.js",
+  "./hsaas-logo.png",
   "./index.html",
   "./contacts.html",
   "./style.css",
@@ -52,10 +54,27 @@ self.addEventListener("fetch", (event) => {
 
   const url = new URL(request.url);
 
-  // Bypass cross-origin (e.g., Auth0, CDNs)
+  // Strategy: Roster Data -> network-first (ensure offline availability)
+  // We detect snapshot.json by the file name so it works on GitHub or Internal servers
+  if (url.pathname.endsWith('/snapshot.json')) {
+    event.respondWith(
+      fetch(request)
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.ok) {
+            const copy = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+          }
+          return networkResponse;
+        })
+        .catch(() => caches.match(request))
+    );
+    return;
+  }
+
+  // Bypass cross-origin (except the snapshot)
   if (url.origin !== self.location.origin) return;
 
-  // Bypass auth-related routes (let the network handle them directly)
+  // Bypass auth-related routes
   if (
     url.pathname.endsWith("/callback.html") ||
     url.pathname.endsWith("/login.html") ||
@@ -91,24 +110,20 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Strategy: static assets -> stale-while-revalidate
   event.respondWith(
     caches.match(request).then((cachedResponse) => {
       const fetchPromise = fetch(request)
         .then((networkResponse) => {
           if (networkResponse && networkResponse.ok) {
+            const responseToCache = networkResponse.clone();
             caches.open(CACHE_NAME).then((cache) =>
-              cache.put(request, networkResponse.clone())
+              cache.put(request, responseToCache)
             );
           }
           return networkResponse;
         })
-        .catch(() => {
-          // Network failed: fall back to cache if present
-          return cachedResponse;
-        });
+        .catch(() => cachedResponse);
 
-      // Serve cached immediately if present, else wait for network
       return cachedResponse || fetchPromise;
     })
   );

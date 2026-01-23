@@ -1,313 +1,64 @@
-/* General reset */
-* { box-sizing: border-box; margin: 0; padding: 0; }
+/* HSAAS Modern Contacts Style */
 
-/* General page styling */
-html, body {
-  font-family: 'Segoe UI', Tahoma, sans-serif;
-  background: #f7f9fc;
-  color: #222;
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-  padding-bottom: 80px;
-  margin: 0;
-  padding: 0;
+#departments {
+  padding: 0 1rem 6rem;
+  max-width: 700px;
+  margin: 0 auto;
 }
 
-/* Header - centered with stacked layout */
-#app-header {
-  background: linear-gradient(90deg, #1976d2, #2196f3);
-  color: white;
-  padding: 1rem;
-  text-align: center;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-}
-
-#logo {
-  height: 100px; /* slightly smaller than before */
-  width: auto;
-  margin-bottom: 0.5rem;
-}
-
-.header-title {
-  font-size: 2rem; /* smaller than before */
-  font-weight: 600;
-  margin-bottom: 0.3rem;
-}
-
-#header-date {
-  font-size: 1.5rem;
-  opacity: 0.9;
-}
-
-
-.page-header {
-  background-color: #0077cc;
-  color: white;
-  padding: 12px 16px;
-  text-align: center;
-  font-size: 1.5rem;
-}
-
-.page-main {
-  padding: 12px 16px;
-}
-
-
-/* Department styling */
-.department {
-  margin-bottom: 12px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  background-color: #fff;
+.doctor-card {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  margin-bottom: 1rem;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-premium);
   overflow: hidden;
 }
 
-.department-header {
-  padding: 10px 16px;
-  background-color: #e6f2ff;
-  cursor: pointer;
-  display: flex;
-  justify-content: space-between;
-  font-weight: bold;
-  transition: background-color 0.3s;
-}
-
-.department-header:hover {
-  background-color: #d0e7ff;
-}
-
-
-/* Contacts list with smooth collapse */
-.contacts-list {
-  display: none; /* initially collapsed */
-  padding: 8px 16px;
-  transition: max-height 0.3s ease, padding 0.3s ease;
-}
-
-.contact-item {
+.doctor-card h2 {
+  padding: 1rem 1.25rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--primary);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 6px 0;
-  border-bottom: 1px solid #f0f0f0;
+  cursor: pointer;
+  background: rgba(99, 102, 241, 0.03);
 }
 
-.contact-item:last-child {
+.doctor-card h2 .arrow {
+  transition: var(--transition);
+}
+
+.doctor-card h2:not(.collapsed) .arrow {
+  transform: rotate(180deg);
+}
+
+.contacts-grid {
+  padding: 0.5rem 0;
+}
+
+.doctor-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.8rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.doctor-row:last-child {
   border-bottom: none;
 }
 
-/* Contact icons styling */
-.contact-icons {
-  display: flex;
-  gap: 8px;
-}
-
-.contact-icons .icon-link svg {
-  width: 24px;
-  height: 24px;
-  vertical-align: middle;
-  transition: transform 0.2s;
-}
-
-.contact-icons .icon-link:hover svg {
-  transform: scale(1.2);
-}
-
-/* From Uiverse.io by Nawsome */ 
-.loader {
-  --background: linear-gradient(135deg, #23C4F8, #275EFE);
-  --shadow: rgba(39, 94, 254, 0.28);
-  --text: #6C7486;
-  --page: rgba(255, 255, 255, 0.36);
-  --page-fold: rgba(255, 255, 255, 0.52);
-  --duration: 3s;
-  width: 200px;
-  height: 140px;
-  position: relative;
-}
-
-.loader:before, .loader:after {
-  --r: -6deg;
-  content: "";
-  position: absolute;
-  bottom: 8px;
-  width: 120px;
-  top: 80%;
-  box-shadow: 0 16px 12px var(--shadow);
-  transform: rotate(var(--r));
-}
-
-.loader:before {
-  left: 4px;
-}
-
-.loader:after {
-  --r: 6deg;
-  right: 4px;
-}
-
-.loader div {
-  width: 100%;
-  height: 100%;
-  border-radius: 13px;
-  position: relative;
-  z-index: 1;
-  perspective: 600px;
-  box-shadow: 0 4px 6px var(--shadow);
-  background-image: var(--background);
-}
-
-.loader div ul {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  position: relative;
-}
-
-.loader div ul li {
-  --r: 180deg;
-  --o: 0;
-  --c: var(--page);
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  transform-origin: 100% 50%;
-  color: var(--c);
-  opacity: var(--o);
-  transform: rotateY(var(--r));
-  -webkit-animation: var(--duration) ease infinite;
-  animation: var(--duration) ease infinite;
-}
-
-.loader div ul li:nth-child(2) {
-  --c: var(--page-fold);
-  -webkit-animation-name: page-2;
-  animation-name: page-2;
-}
-
-.loader div ul li:nth-child(3) {
-  --c: var(--page-fold);
-  -webkit-animation-name: page-3;
-  animation-name: page-3;
-}
-
-.loader div ul li:nth-child(4) {
-  --c: var(--page-fold);
-  -webkit-animation-name: page-4;
-  animation-name: page-4;
-}
-
-.loader div ul li:nth-child(5) {
-  --c: var(--page-fold);
-  -webkit-animation-name: page-5;
-  animation-name: page-5;
-}
-
-.loader div ul li svg {
-  width: 90px;
-  height: 120px;
+.doctor-info strong {
   display: block;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-main);
 }
 
-.loader div ul li:first-child {
-  --r: 0deg;
-  --o: 1;
-}
-
-.loader div ul li:last-child {
-  --o: 1;
-}
-
-.loader span {
-  display: block;
-  left: 0;
-  right: 0;
-  top: 100%;
-  margin-top: 20px;
-  text-align: center;
-  color: var(--text);
-}
-
-@keyframes page-2 {
-  0% {
-    transform: rotateY(180deg);
-    opacity: 0;
-  }
-
-  20% {
-    opacity: 1;
-  }
-
-  35%, 100% {
-    opacity: 0;
-  }
-
-  50%, 100% {
-    transform: rotateY(0deg);
-  }
-}
-
-@keyframes page-3 {
-  15% {
-    transform: rotateY(180deg);
-    opacity: 0;
-  }
-
-  35% {
-    opacity: 1;
-  }
-
-  50%, 100% {
-    opacity: 0;
-  }
-
-  65%, 100% {
-    transform: rotateY(0deg);
-  }
-}
-
-@keyframes page-4 {
-  30% {
-    transform: rotateY(180deg);
-    opacity: 0;
-  }
-
-  50% {
-    opacity: 1;
-  }
-
-  65%, 100% {
-    opacity: 0;
-  }
-
-  80%, 100% {
-    transform: rotateY(0deg);
-  }
-}
-
-@keyframes page-5 {
-  45% {
-    transform: rotateY(180deg);
-    opacity: 0;
-  }
-
-  65% {
-    opacity: 1;
-  }
-
-  80%, 100% {
-    opacity: 0;
-  }
-
-  95%, 100% {
-    transform: rotateY(0deg);
-  }
-}
-
-.loader-wrapper {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 60vh;
+.doctor-info span {
+  font-size: 0.8rem;
+  color: var(--text-muted);
 }

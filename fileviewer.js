@@ -1,6 +1,6 @@
 // === CONFIG ===
-const API_KEY = "AIzaSyD31jjNmYQWOwOnkUHwJpucsU_HceUAJWw";   // replace with your restricted key
-const ROOT_FOLDER_ID = "19hxtBDM7U6IRepoEZiOHVG2MK_erNdrk"; // your shared folder ID
+const API_KEY = window.APP_CONFIG?.DRIVE_API_KEY || "AIzaSyD31jjNmYQWOwOnkUHwJpucsU_HceUAJWw";
+const ROOT_FOLDER_ID = window.APP_CONFIG?.ROOT_FOLDER_ID || "19hxtBDM7U6IRepoEZiOHVG2MK_erNdrk";
 
 // Elements
 const fileList = document.getElementById("file-list");
@@ -15,62 +15,65 @@ let folderStack = [{ id: ROOT_FOLDER_ID, name: "Shared Folder" }];
 console.log("✅ script.js loaded");
 
 function highlightSecondWord(name) {
-  const escaped = String(name).replace(/[&<>"']/g, ch => ({
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#39;',
-  })[ch]);
-
-  const words = escaped.trim().split(/\s+/).filter(Boolean);
-
-  if (words.length < 2) {
-    return escaped;
-  }
-
-  const [first, second, ...rest] = words;
-  let markup = `${first}<br><span class="file-name__accent">${second}</span>`;
-  if (rest.length) {
-    markup += `<br>${rest.join(' ')}`;
-  }
-
-  return markup;
+  if (!name) return "";
+  const words = name.trim().split(/\s+/);
+  if (words.length <= 1) return name;
+  const first = words[0];
+  const second = words[1];
+  const rest = words.slice(2).join(" ");
+  return `${first} <span class="accent">${second}</span> ${rest}`.trim();
 }
 
 function showLoader() {
   if (loaderWrapper) {
-    loaderWrapper.classList.remove("is-hidden");
+    loaderWrapper.classList.remove("hidden");
   }
   if (fileList) {
-    fileList.classList.add("is-hidden");
+    fileList.classList.add("hidden");
   }
 }
 
 function hideLoader() {
   if (loaderWrapper) {
-    loaderWrapper.classList.add("is-hidden");
+    loaderWrapper.classList.add("hidden");
   }
   if (fileList) {
-    fileList.classList.remove("is-hidden");
+    fileList.classList.remove("hidden");
   }
 }
 
 
-// make gapiLoaded a property of window so onload can call it
-window.gapiLoaded = function() {
-  console.log("👉 gapiLoaded called");
+// Polling for GAPI to load
+async function startGapi() {
+  console.log("🧐 Checking for GAPI...");
+  let tries = 0;
+  while (typeof gapi === 'undefined' || !gapi.load) {
+    await new Promise(r => setTimeout(r, 100));
+    if (++tries > 100) {
+      console.error("GAPI timed out");
+      hideLoader();
+      fileList.textContent = "Google API failed to load.";
+      return;
+    }
+  }
   gapi.load("client", initializeGapiClient);
-};
+}
+startGapi();
 
 async function initializeGapiClient() {
-  console.log("👉 initializeGapiClient called");
-  await gapi.client.init({
-    apiKey: API_KEY,
-    discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"],
-  });
-  console.log("👉 Drive API ready");
-  listFiles(ROOT_FOLDER_ID);
+  console.log("👉 initializeGapiClient...");
+  try {
+    await gapi.client.init({
+      apiKey: API_KEY,
+      discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"],
+    });
+    console.log("👉 Drive API ready");
+    await listFiles(ROOT_FOLDER_ID);
+  } catch (err) {
+    console.error("GAPI Init Error:", err);
+    hideLoader();
+    fileList.textContent = "Failed to connect to Google Drive.";
+  }
 }
 
 async function listFiles(folderId) {
@@ -78,6 +81,7 @@ async function listFiles(folderId) {
   fileList.innerHTML = "";
 
   try {
+    console.log(`📂 Fetching files for folder: ${folderId}`);
     const response = await gapi.client.drive.files.list({
       q: `'${folderId}' in parents and trashed=false`,
       orderBy: "folder,name desc",
@@ -86,11 +90,12 @@ async function listFiles(folderId) {
     });
 
     const files = response.result.files || [];
-
-    hideLoader();
+    console.log(`✅ Received ${files.length} files`);
 
     if (files.length === 0) {
-      fileList.textContent = "No files here.";
+      console.warn("⚠️ No files found in this folder");
+      fileList.innerHTML = '<p class="p-8 text-center text-muted">No folders or rosters found here.</p>';
+      hideLoader();
       return;
     }
 
@@ -101,30 +106,44 @@ async function listFiles(folderId) {
 
       if (file.mimeType === "application/vnd.google-apps.folder") {
         div.innerHTML = `
-          <div class="folder-thumb">📁</div>
+          <div class="folder-thumb">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="var(--primary)" opacity="0.9">
+              <path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/>
+            </svg>
+          </div>
           <div class="file-name">${nameMarkup}</div>
         `;
         div.onclick = () => enterFolder(file);
       } else {
-        const thumb = file.thumbnailLink
-          ? `<img src="${file.thumbnailLink}" alt="thumb" class="file-thumb" />`
-          : `<div class="file-icon">📁</div>`;
+        // Boost thumbnail resolution from default (usually =s220) to =s400 for crispness
+        const thumbUrl = file.thumbnailLink ? file.thumbnailLink.replace(/=s\d+$/, '=s400') : null;
+        const thumbMarkup = thumbUrl
+          ? `<img src="${thumbUrl}" alt="thumb" class="file-thumb" />`
+          : `<div class="file-icon">
+             <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+                <polyline points="10 9 9 9 8 9"></polyline>
+             </svg>
+          </div>`;
 
         div.innerHTML = `
-          ${thumb}
+          ${thumbMarkup}
           <div class="file-name">${nameMarkup}</div>
         `;
         div.onclick = () => openViewer(file);
       }
-
       fileList.appendChild(div);
     });
 
     updateBreadcrumb();
-  } catch (err) {
-    console.error(err);
     hideLoader();
-    fileList.textContent = "Error loading files.";
+  } catch (err) {
+    console.error("ListFiles Error:", err);
+    hideLoader();
+    fileList.textContent = "Error loading files. Check console.";
   }
 }
 

@@ -1,33 +1,35 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ROSTER FILE VIEWER</title>
+  <title>Roster Files - HSAAS</title>
   <link rel="stylesheet" href="fileviewer_style.css">
   <link rel="stylesheet" href="navbar.css">
-  <script src="fileviewer.js" defer></script>
-  <!-- Load Google API -->
-  <script async defer src="https://apis.google.com/js/api.js"
-          onload="gapiLoaded()"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet">
 
-    <!-- at top of the page (head or very top of body) -->
+  <script src="config.js"></script>
+  <script src="fileviewer.js" defer></script>
+  <script src="swipe.js" defer></script>
+  <script async defer src="https://apis.google.com/js/api.js"></script>
+
   <script defer src="./auth/auth-config.js"></script>
   <script defer src="./auth/auth.js"></script>
   <script>
     (async () => {
-      // wait for Auth to exist
       if (!window.Auth) {
-        await new Promise((resolve, reject) => {
-          let tries=0; const iv=setInterval(()=> {
+        await new Promise((resolve) => {
+          let tries = 0; const iv = setInterval(() => {
             if (window.Auth) { clearInterval(iv); resolve(); }
-            else if (++tries>300) { clearInterval(iv); reject(new Error("Auth not loaded")); }
+            else if (++tries > 300) { clearInterval(iv); resolve(); }
           }, 20);
         });
       }
       await Auth.initAuth();
-
-      // IMPORTANT: With localstorage cache, this will remain true after navs
       const authed = await Auth.isAuthenticated();
       if (!authed) {
         const ret = location.pathname + location.search + location.hash;
@@ -36,95 +38,87 @@
       }
     })();
   </script>
-
 </head>
 
 <body>
-  <header id="app-header">
-    <img src="icons/logo.png" alt="Logo" id="logo">
-    <h1 class="header-title">📂 All Rosters</h1>
-    <nav id="breadcrumb"></nav>
-  </header>
-
-  <main>
-    <div id="file-loader" class="loader-wrapper">
-      <div class="loader">
-        <div>
-          <ul>
-            <li>
-              <svg fill="currentColor" viewBox="0 0 90 120">
-                <path d="M90,0 L90,120 L11,120 C4.9,120 0,115.07 0,109 L0,11 C0,4.92 4.92,0 11,0 L90,0 Z M71.5,81 L18.5,81 C17.12,81 16,82.12 16,83.5 C16,84.83 17.03,85.91 18.34,85.99 L18.5,86 L71.5,86 C72.88,86 74,84.88 74,83.5 C74,82.17 72.97,81.09 71.66,81.00 L71.5,81 Z M71.5,57 L18.5,57 C17.12,57 16,58.12 16,59.5 C16,60.82 17.03,61.91 18.34,61.99 L18.5,62 L71.5,62 C72.88,62 74,60.88 74,59.5 C74,58.12 72.88,57 71.5,57 Z M71.5,33 L18.5,33 C17.12,33 16,34.12 16,35.5 C16,36.82 17.03,37.91 18.34,37.99 L18.5,38 L71.5,38 C72.88,38 74,36.88 74,35.5 C74,34.12 72.88,33 71.5,33 Z"></path>
-              </svg>
-            </li>
-            <li>
-              <svg fill="currentColor" viewBox="0 0 90 120">
-                <path d="M90,0 L90,120 L11,120 C4.9,120 0,115.07 0,109 L0,11 C0,4.92 4.92,0 11,0 L90,0 Z M71.5,81 L18.5,81 C17.12,81 16,82.12 16,83.5 C16,84.83 17.03,85.91 18.34,85.99 L18.5,86 L71.5,86 C72.88,86 74,84.88 74,83.5 C74,82.17 72.97,81.09 71.66,81.00 L71.5,81 Z M71.5,57 L18.5,57 C17.12,57 16,58.12 16,59.5 C16,60.82 17.03,61.91 18.34,61.99 L18.5,62 L71.5,62 C72.88,62 74,60.88 74,59.5 C74,58.12 72.88,57 71.5,57 Z M71.5,33 L18.5,33 C17.12,33 16,34.12 16,35.5 C16,36.82 17.03,37.91 18.34,37.99 L18.5,38 L71.5,38 C72.88,38 74,36.88 74,35.5 C74,34.12 72.88,33 71.5,33 Z"></path>
-              </svg>
-            </li>
-            <li>
-              <svg fill="currentColor" viewBox="0 0 90 120">
-                <path d="M90,0 L90,120 L11,120 C4.9,120 0,115.07 0,109 L0,11 C0,4.92 4.92,0 11,0 L90,0 Z M71.5,81 L18.5,81 C17.12,81 16,82.12 16,83.5 C16,84.83 17.03,85.91 18.34,85.99 L18.5,86 L71.5,86 C72.88,86 74,84.88 74,83.5 C74,82.17 72.97,81.09 71.66,81.00 L71.5,81 Z M71.5,57 L18.5,57 C17.12,57 16,58.12 16,59.5 C16,60.82 17.03,61.91 18.34,61.99 L18.5,62 L71.5,62 C72.88,62 74,60.88 74,59.5 C74,58.12 72.88,57 71.5,57 Z M71.5,33 L18.5,33 C17.12,33 16,34.12 16,35.5 C16,36.82 17.03,37.91 18.34,37.99 L18.5,38 L71.5,38 C72.88,38 74,36.88 74,35.5 C74,34.12 72.88,33 71.5,33 Z"></path>
-              </svg>
-            </li>
-            <li>
-              <svg fill="currentColor" viewBox="0 0 90 120">
-                <path d="M90,0 L90,120 L11,120 C4.9,120 0,115.07 0,109 L0,11 C0,4.92 4.92,0 11,0 L90,0 Z M71.5,81 L18.5,81 C17.12,81 16,82.12 16,83.5 C16,84.83 17.03,85.91 18.34,85.99 L18.5,86 L71.5,86 C72.88,86 74,84.88 74,83.5 C74,82.17 72.97,81.09 71.66,81.00 L71.5,81 Z M71.5,57 L18.5,57 C17.12,57 16,58.12 16,59.5 C16,60.82 17.03,61.91 18.34,61.99 L18.5,62 L71.5,62 C72.88,62 74,60.88 74,59.5 C74,58.12 72.88,57 71.5,57 Z M71.5,33 L18.5,33 C17.12,33 16,34.12 16,35.5 C16,36.82 17.03,37.91 18.34,37.99 L18.5,38 L71.5,38 C72.88,38 74,36.88 74,35.5 C74,34.12 72.88,33 71.5,33 Z"></path>
-              </svg>
-            </li>
-            <li>
-              <svg fill="currentColor" viewBox="0 0 90 120">
-                <path d="M90,0 L90,120 L11,120 C4.9,120 0,115.07 0,109 L0,11 C0,4.92 4.92,0 11,0 L90,0 Z M71.5,81 L18.5,81 C17.12,81 16,82.12 16,83.5 C16,84.83 17.03,85.91 18.34,85.99 L18.5,86 L71.5,86 C72.88,86 74,84.88 74,83.5 C74,82.17 72.97,81.09 71.66,81.00 L71.5,81 Z M71.5,57 L18.5,57 C17.12,57 16,58.12 16,59.5 C16,60.82 17.03,61.91 18.34,61.99 L18.5,62 L71.5,62 C72.88,62 74,60.88 74,59.5 C74,58.12 72.88,57 71.5,57 Z M71.5,33 L18.5,33 C17.12,33 16,34.12 16,35.5 C16,36.82 17.03,37.91 18.34,37.99 L18.5,38 L71.5,38 C72.88,38 74,36.88 74,35.5 C74,34.12 72.88,33 71.5,33 Z"></path>
-              </svg>
-            </li>
-          </ul>
-        </div>
-        <span>Loading<span class="dots"></span></span>
+  <div id="page-wrapper">
+    <header id="app-header">
+      <div class="header-top">
+        <img src="hsaas-logo.png" alt="HSAAS Logo" id="logo">
+        <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle Dark Mode">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="5" />
+            <line x1="12" y1="1" x2="12" y2="3" />
+            <line x1="12" y1="21" x2="12" y2="23" />
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+            <line x1="1" y1="12" x2="3" y2="12" />
+            <line x1="21" y1="12" x2="23" y2="12" />
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22">
+          </svg>
+        </button>
       </div>
-    </div>
-    <div id="file-list" class="grid is-hidden"></div>
-  </main>
+      <h1 class="header-title">ROSTER FILES</h1>
+      <nav id="breadcrumb"></nav>
+    </header>
 
-  <!-- File viewer modal -->
-  <div id="viewer-modal" class="modal hidden">
-  <div class="modal-content">
-    <span id="close-viewer">❌</span>
-    <iframe id="file-viewer" frameborder="0"></iframe>
+    <main>
+      <div id="file-loader" class="loader-wrapper">
+        <div class="loader">
+          <svg class="book-icon" viewBox="0 0 90 120" fill="currentColor">
+            <path
+              d="M90,0 L90,120 L11,120 C4.9,120 0,115.07 0,109 L0,11 C0,4.92 4.92,0 11,0 L90,0 Z M71.5,81 L18.5,81 C17.12,81 16,82.12 16,83.5 C16,84.83 17.03,85.91 18.34,85.99 L18.5,86 L71.5,86 C72.88,86 74,84.88 74,83.5 C74,82.17 72.97,81.09 71.66,81.00 L71.5,81 Z M71.5,57 L18.5,57 C17.12,57 16,58.12 16,59.5 C16,60.82 17.03,61.91 18.34,61.99 L18.5,62 L71.5,62 C72.88,62 74,60.88 74,59.5 C74,58.12 72.88,57 71.5,57 Z M71.5,33 L18.5,33 C17.12,33 16,34.12 16,35.5 C16,36.82 17.03,37.91 18.34,37.99 L18.5,38 L71.5,38 C72.88,38 74,36.88 74,35.5 C74,34.12 72.88,33 71.5,33 Z">
+            </path>
+          </svg>
+          <span>LOADING FILES...</span>
+        </div>
+      </div>
+      <div id="file-list" class="grid hidden"></div>
+    </main>
   </div>
-</div>
+
+  <div id="viewer-modal" class="modal hidden">
+    <div class="modal-content">
+      <span id="close-viewer">✕</span>
+      <iframe id="file-viewer"></iframe>
+    </div>
+  </div>
 
   <nav class="bottom-nav">
     <button class="active" onclick="location.href='fileviewer.html'">
-      <div class="stack">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-            viewBox="0 0 24 24" fill="none" stroke="white"
-            stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
-            role="img" aria-label="File">
-        <path d="M14 2H7a3 3 0 0 0-3 3v14a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V8z"/>
-        <path d="M14 2v6h6"/>
-        </svg>
-        <span>File</span>
-      </div>
+      <svg fill="none" viewBox="0 0 24 24">
+        <path d="M14 2H7a3 3 0 0 0-3 3v14a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V8z" />
+        <path d="M14 2v6h6" />
+      </svg>
+      <span>FILE</span>
     </button>
-
     <button onclick="location.href='index.html'">
-      <div class="stack">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-            <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
-        </svg>
-        <span>Home</span>
-      </div>
+      <svg viewBox="0 0 24 24">
+        <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
+      </svg>
+      <span>HOME</span>
     </button>
-
     <button onclick="location.href='contacts.html'">
-      <div class="stack">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-          <path d="M12 12c2.7 0 4.5-1.8 4.5-4.5S14.7 3 12 3 7.5 4.8 7.5 7.5 9.3 12 12 12zm0 2c-3 0-9 1.5-9 4.5V21h18v-2.5c0-3-6-4.5-9-4.5z"/>
-        </svg>
-        <span>Contacts</span>
-      </div>
+      <svg viewBox="0 0 24 24">
+        <path
+          d="M12 12c2.7 0 4.5-1.8 4.5-4.5S14.7 3 12 3 7.5 4.8 7.5 7.5 9.3 12 12 12zm0 2c-3 0-9 1.5-9 4.5V21h18v-2.5c0-3-6-4.5-9-4.5z" />
+      </svg>
+      <span>CONTACTS</span>
     </button>
-</nav>
+  </nav>
 
+  <script>
+    function toggleTheme() {
+      const root = document.documentElement;
+      const next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      root.setAttribute('data-theme', next);
+      localStorage.setItem('theme', next);
+      if (window.navigator?.vibrate) window.navigator.vibrate(10);
+    }
+    document.documentElement.setAttribute('data-theme', localStorage.getItem('theme') || 'light');
+  </script>
 </body>
-</html>
 
+</html>

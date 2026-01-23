@@ -77,6 +77,32 @@ jobs:
           fetch_with_retry_to_file "timetable" "timetable.json"
           fetch_with_retry_to_file "contacts" "contacts.json"
 
+          # --- Trimming Logic ---
+          echo "✂️ Trimming timetable data..."
+          # Get dates in YYYYMMDD for comparison
+          START_OF_MONTH=$(date +"%Y%m01")
+          SEVEN_DAYS_AGO=$(date -d "7 days ago" +"%Y%m%d")
+          
+          # Use the earlier date to ensure we keep both "last 7 days" and "current month"
+          if [ "$START_OF_MONTH" -lt "$SEVEN_DAYS_AGO" ]; then
+            CUTOFF=$START_OF_MONTH
+          else
+            CUTOFF=$SEVEN_DAYS_AGO
+          fi
+          
+          echo "Target Cutoff: $CUTOFF"
+          
+          # Filter timetable.json: keep headers (index 0) and rows where date >= CUTOFF
+          # Date format in sheet is DD/MM/YYYY -> split("/") | .[2]+.[1]+.[0]
+          jq --arg cutoff "$CUTOFF" '
+            .values |= ([.[0]] + (.[1:] | map(select(
+              (.[0] | split("/") | if length == 3 then .[2] + .[1] + .[0] else "00000000" end) >= $cutoff
+            ))))
+          ' timetable.json > timetable_trimmed.json
+          
+          mv timetable_trimmed.json timetable.json
+          echo "✅ Timetable trimmed. Rows kept: $(jq '.values | length' timetable.json)"
+
           # Combine into snapshot with timestamp
           jq -n --arg ts "$TIMESTAMP" \
             --slurpfile timetable timetable.json \
@@ -84,8 +110,6 @@ jobs:
             '{last_updated: $ts, timetable: $timetable[0], contacts: $contacts[0]}' > snapshot.json
 
           echo "✅ Raw data snapshot created with timestamp: $TIMESTAMP"
-          echo "📊 Snapshot content:"
-          cat snapshot.json | jq .
 
           # Clean up temporary files
           rm -f temp_response.txt timetable.json contacts.json

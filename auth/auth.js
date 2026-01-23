@@ -42,9 +42,10 @@
 
   async function initAuth() {
     if (auth0Client) return auth0Client;
+
+    console.log("[Auth] Initializing with config:", window.__AUTH0_CONFIG__);
     await loadSdkWithFallbacks();
 
-    // Supports either global "auth0" or "createAuth0Client"
     const createClient =
       (window.auth0 && window.auth0.createAuth0Client) || window.createAuth0Client;
 
@@ -53,15 +54,14 @@
     }
 
     auth0Client = await createClient({
-    domain: window.__AUTH0_CONFIG__.domain,
-    clientId: window.__AUTH0_CONFIG__.clientId,
-    authorizationParams: {
+      domain: window.__AUTH0_CONFIG__.domain,
+      clientId: window.__AUTH0_CONFIG__.clientId,
+      authorizationParams: {
         redirect_uri: window.__AUTH0_CONFIG__.redirectUri,
         scope: "openid profile email offline_access"
-        // audience: window.__AUTH0_CONFIG__.audience || undefined,
-    },
-    useRefreshTokens: true,
-    cacheLocation: "localstorage"   // <— was "memory"
+      },
+      useRefreshTokens: true,
+      cacheLocation: "localstorage"
     });
 
     return auth0Client;
@@ -69,6 +69,7 @@
 
   async function login() {
     const client = await initAuth();
+    console.log("[Auth] Starting login redirect to:", window.__AUTH0_CONFIG__.redirectUri);
     await client.loginWithRedirect();
   }
 
