@@ -6,9 +6,9 @@
     "values": [
       [
         "Date",
-        "RESQ AM",
-        "RESQ PM",
-        "RESQ NIGHT",
+        "ED AM",
+        "ED PM",
+        "ED NIGHT",
         "MEDICAL 1ST CALL (MW2)",
         "MEDICAL 2ND CALL (PERI / RESQ / LODGER)",
         "MEDICAL 3RD CALL (NEURO / ICU)",
