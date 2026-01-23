@@ -7131,8 +7131,8 @@
     "majorDimension": "ROWS",
     "values": [
       [
-        "RESQ NAME",
-        "RESQ PHONE",
+        "ED NAME",
+        "ED PHONE",
         "MEDICAL NAME",
         "MEDICAL PHONE",
         "SURGICAL NAME",
@@ -8542,7 +8542,7 @@
         "",
         "",
         "SUHANESH",
-        "014-412 9681",
+        "012-412 9681",
         "",
         "",
         "",
