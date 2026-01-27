@@ -212,9 +212,15 @@ function buildDashboardHTML(timetable, contacts, query = '') {
     });
 
     if (subHtml) {
+      const cardId = `dept-card-${mainDept.replace(/\s+/g, '-')}`;
       html += `
-                <div class="doctor-card">
-                    <h2>${mainDept}</h2>
+                <div class="doctor-card" id="${cardId}">
+                    <div class="card-header">
+                        <h2>${mainDept}</h2>
+                        <button class="share-card-btn" onclick="shareCardAsImage('${cardId}', '${mainDept}')" title="Share as Image">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+                        </button>
+                    </div>
                     ${subHtml}
                 </div>
             `;
@@ -264,4 +270,56 @@ function renderDoctorRow(name, phone) {
             </div>
         </div>
     `;
+}
+
+async function shareCardAsImage(cardId, deptName) {
+  if (typeof html2canvas === 'undefined') {
+    alert('Sharing library is still loading. Please try again in a moment.');
+    return;
+  }
+  triggerHaptic(20);
+  const card = document.getElementById(cardId);
+  const shareBtn = card.querySelector('.share-card-btn');
+  const contactIcons = card.querySelectorAll('.contact-icons');
+
+  // Prepare clones/styles for high quality capture
+  shareBtn.style.display = 'none';
+
+  try {
+    // Show loading state if needed
+    const canvas = await html2canvas(card, {
+      scale: 3, // Higher scale for better text clarity
+      useCORS: true,
+      backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--bg-card').trim(),
+      logging: false,
+      onclone: (clonedDoc) => {
+        const clonedCard = clonedDoc.getElementById(cardId);
+        clonedCard.style.borderRadius = '0'; // Avoid edge artifacts in some browsers
+      }
+    });
+
+    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png', 1.0));
+    const dateStr = document.getElementById('header-date').textContent;
+    const fileName = `HSAAS_Roster_${deptName}_${dateStr.replace(/[/\\?%*:|"<>]/g, '-')}.png`;
+    const file = new File([blob], fileName, { type: 'image/png' });
+
+    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({
+        files: [file],
+        title: `${deptName} Roster`,
+        text: `On-Call Roster for ${deptName} (${dateStr})`
+      });
+    } else {
+      // Fallback: Download
+      const link = document.createElement('a');
+      link.download = fileName;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    }
+  } catch (err) {
+    console.error('Error sharing image:', err);
+    alert('Failed to generate image. Please try again.');
+  } finally {
+    shareBtn.style.display = 'flex';
+  }
 }
