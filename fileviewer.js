@@ -10,9 +10,32 @@ const closeViewer = document.getElementById("close-viewer");
 const viewer = document.getElementById("file-viewer");
 const breadcrumb = document.getElementById("breadcrumb");
 
-let folderStack = [{ id: ROOT_FOLDER_ID, name: "Shared Folder" }];
+// --- Session Persistence Helpers ---
+const FOLDER_SESSION_KEY = "hsaas_last_folder_stack";
 
-console.log("✅ script.js loaded");
+/**
+ * Saves the current folder stack to sessionStorage
+ */
+function saveFolderId(stack) {
+  sessionStorage.setItem(FOLDER_SESSION_KEY, JSON.stringify(stack));
+}
+
+/**
+ * Retrieves the saved folder stack from sessionStorage
+ */
+function getSavedFolderId() {
+  const saved = sessionStorage.getItem(FOLDER_SESSION_KEY);
+  try {
+    return saved ? JSON.parse(saved) : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+// Initial state: Restore from session or use defaults
+let folderStack = getSavedFolderId() || [{ id: ROOT_FOLDER_ID, name: "Shared Folder" }];
+
+console.log("✅ fileviewer.js loaded");
 
 function highlightSecondWord(name) {
   if (!name) return "";
@@ -68,7 +91,9 @@ async function initializeGapiClient() {
       discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"],
     });
     console.log("👉 Drive API ready");
-    await listFiles(ROOT_FOLDER_ID);
+    // On page load: Restore the last folder from the stack
+    const currentFolder = folderStack[folderStack.length - 1];
+    await listFiles(currentFolder.id);
   } catch (err) {
     console.error("GAPI Init Error:", err);
     hideLoader();
@@ -149,6 +174,7 @@ async function listFiles(folderId) {
 
 function enterFolder(folder) {
   folderStack.push({ id: folder.id, name: folder.name });
+  saveFolderId(folderStack); // Persist state
   listFiles(folder.id);
 }
 
@@ -159,6 +185,7 @@ function updateBreadcrumb() {
     span.textContent = f.name;
     span.onclick = () => {
       folderStack = folderStack.slice(0, index + 1);
+      saveFolderId(folderStack); // Persist state
       listFiles(f.id);
     };
     breadcrumb.appendChild(span);
