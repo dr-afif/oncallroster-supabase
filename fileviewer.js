@@ -32,6 +32,25 @@ function getSavedFolderId() {
   }
 }
 
+/**
+ * Caches a folder's file list in sessionStorage
+ */
+function setFilesToCache(folderId, files) {
+  sessionStorage.setItem(`cache_files_${folderId}`, JSON.stringify(files));
+}
+
+/**
+ * Retrieves a folder's file list from sessionStorage
+ */
+function getFilesFromCache(folderId) {
+  const saved = sessionStorage.getItem(`cache_files_${folderId}`);
+  try {
+    return saved ? JSON.parse(saved) : null;
+  } catch (e) {
+    return null;
+  }
+}
+
 // Initial state: Restore from session or use defaults
 let folderStack = getSavedFolderId() || [{ id: ROOT_FOLDER_ID, name: "Shared Folder" }];
 
@@ -102,35 +121,62 @@ async function initializeGapiClient() {
 }
 
 async function listFiles(folderId) {
-  showLoader();
-  fileList.innerHTML = "";
+  // ⚡ 1. Try to load from Cache first for immediate display
+  const cachedFiles = getFilesFromCache(folderId);
+  if (cachedFiles) {
+    console.log("⚡ Instant load from cache");
+    renderFilesUI(cachedFiles);
+    updateBreadcrumb();
+    hideLoader();
+  } else {
+    showLoader();
+    fileList.innerHTML = "";
+  }
 
+  // 📡 2. Fetch fresh data from Google Drive in the background
   try {
-    console.log(`📂 Fetching files for folder: ${folderId}`);
+    console.log(`📂 Fetching live files for folder: ${folderId}`);
     const response = await gapi.client.drive.files.list({
-      q: `'${folderId}' in parents and trashed=false`,
+      q: `'${folderId}' in parents and trashed=false`, // Use live ID here
       orderBy: "folder,name desc",
       pageSize: 100,
       fields: "files(id, name, mimeType, webViewLink, iconLink, thumbnailLink)"
     });
 
     const files = response.result.files || [];
-    console.log(`✅ Received ${files.length} files`);
+    console.log(`✅ Received ${files.length} fresh files`);
 
-    if (files.length === 0) {
-      console.warn("⚠️ No files found in this folder");
-      fileList.innerHTML = '<p class="p-8 text-center text-muted">No folders or rosters found here.</p>';
+    // 💾 3. Update cache with fresh data
+    setFilesToCache(folderId, files);
+
+    // 🎨 4. Render fresh data (UI updates smoothly)
+    renderFilesUI(files);
+    updateBreadcrumb();
+    hideLoader();
+  } catch (err) {
+    console.error("ListFiles Error:", err);
+    if (!cachedFiles) {
       hideLoader();
-      return;
+      fileList.textContent = "Error loading files. Check connection.";
     }
+  }
+}
 
-    files.forEach(file => {
-      const div = document.createElement("div");
-      div.className = "file-card";
-      const nameMarkup = highlightSecondWord(file.name);
+function renderFilesUI(files) {
+  fileList.innerHTML = "";
 
-      if (file.mimeType === "application/vnd.google-apps.folder") {
-        div.innerHTML = `
+  if (files.length === 0) {
+    fileList.innerHTML = '<p class="p-8 text-center text-muted">No folders or rosters found here.</p>';
+    return;
+  }
+
+  files.forEach(file => {
+    const div = document.createElement("div");
+    div.className = "file-card";
+    const nameMarkup = highlightSecondWord(file.name);
+
+    if (file.mimeType === "application/vnd.google-apps.folder") {
+      div.innerHTML = `
           <div class="folder-thumb">
             <svg width="40" height="40" viewBox="0 0 24 24" fill="var(--primary)" opacity="0.9">
               <path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/>
@@ -138,13 +184,13 @@ async function listFiles(folderId) {
           </div>
           <div class="file-name">${nameMarkup}</div>
         `;
-        div.onclick = () => enterFolder(file);
-      } else {
-        // Boost thumbnail resolution from default (usually =s220) to =s400 for crispness
-        const thumbUrl = file.thumbnailLink ? file.thumbnailLink.replace(/=s\d+$/, '=s400') : null;
-        const thumbMarkup = thumbUrl
-          ? `<img src="${thumbUrl}" alt="thumb" class="file-thumb" />`
-          : `<div class="file-icon">
+      div.onclick = () => enterFolder(file);
+    } else {
+      // Boost thumbnail resolution from default (usually =s220) to =s400 for crispness
+      const thumbUrl = file.thumbnailLink ? file.thumbnailLink.replace(/=s\d+$/, '=s400') : null;
+      const thumbMarkup = thumbUrl
+        ? `<img src="${thumbUrl}" alt="thumb" class="file-thumb" />`
+        : `<div class="file-icon">
              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                 <polyline points="14 2 14 8 20 8"></polyline>
@@ -154,22 +200,14 @@ async function listFiles(folderId) {
              </svg>
           </div>`;
 
-        div.innerHTML = `
+      div.innerHTML = `
           ${thumbMarkup}
           <div class="file-name">${nameMarkup}</div>
         `;
-        div.onclick = () => openViewer(file);
-      }
-      fileList.appendChild(div);
-    });
-
-    updateBreadcrumb();
-    hideLoader();
-  } catch (err) {
-    console.error("ListFiles Error:", err);
-    hideLoader();
-    fileList.textContent = "Error loading files. Check console.";
-  }
+      div.onclick = () => openViewer(file);
+    }
+    fileList.appendChild(div);
+  });
 }
 
 function enterFolder(folder) {
