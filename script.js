@@ -206,7 +206,7 @@ function buildDashboardHTML(timetable, contacts, query = '') {
           subHtml += `<h3>${subDept}</h3>`;
         }
         filteredDoctors.forEach(({ name, phone }) => {
-          subHtml += renderDoctorRow(name, phone);
+          subHtml += renderDoctorRow(name, phone, mainDept);
         });
       }
     });
@@ -250,7 +250,7 @@ function prepareContactsMap(contacts) {
   return map;
 }
 
-function renderDoctorRow(name, phone) {
+function renderDoctorRow(name, phone, dept) {
   const tel = phone !== 'Unknown' ? `tel:${phone}` : '#';
   const wa = phone !== 'Unknown' ? `https://wa.me/6${phone.replace(/\D/g, '')}` : '#';
 
@@ -267,9 +267,28 @@ function renderDoctorRow(name, phone) {
                 <a href="${wa}" onclick="triggerHaptic()" target="_blank" class="icon-link">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#25D366"><path d="M12.031 6.172c-2.203 0-4.004 1.8-4.004 4.004 0 .823.252 1.589.687 2.22l-.547 2.015 2.072-.544c.541.311 1.171.492 1.844.492 2.203 0 4.004-1.8 4.004-4.004 0-2.203-1.801-4.004-4.056-4.004zM12.031 2c-5.523 0-10 4.477-10 10 0 1.765.459 3.42 1.258 4.851l-1.332 4.904 5.034-1.321c1.45.811 3.125 1.271 4.912 1.271 5.523 0 10-4.477 10-10s-4.477-10-9.872-10z"/></svg>
                 </a>
+                <button onclick="shareContact('${name.replace(/'/g, "\\'")}', '${phone}', '${dept.replace(/'/g, "\\'")}')" class="icon-link share-btn" title="Share Contact">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+                </button>
             </div>
         </div>
     `;
+}
+
+function shareContact(name, phone, dept) {
+  triggerHaptic(20);
+  const fullName = name.toUpperCase().startsWith('DR.') ? name.toUpperCase() : `DR. ${name.toUpperCase()}`;
+  const text = `*HSAAS On-Call Contact*\n\n*Dept:* ${dept}\n*Name:* ${fullName}\n*Phone:* ${phone}\n\nWhatsapp directly: wa.me/6${phone.replace(/\D/g, '')}`;
+
+  if (navigator.share) {
+    navigator.share({
+      title: fullName,
+      text: text
+    }).catch(console.error);
+  } else {
+    const waUrl = `https://wa.me/?text=${encodeURIComponent(text)}`;
+    window.open(waUrl, '_blank');
+  }
 }
 
 async function shareCardAsImage(cardId, deptName) {
