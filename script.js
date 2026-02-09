@@ -1,11 +1,11 @@
 // script.js - Supabase version
-let supabase = null;
+let sbClient = null;
 
 /**
  * Initialize Supabase client
  */
 async function getSupabase() {
-  if (supabase) return supabase;
+  if (sbClient) return sbClient;
 
   const url = window.APP_CONFIG?.SUPABASE_URL;
   const key = window.APP_CONFIG?.SUPABASE_ANON_KEY;
@@ -27,8 +27,8 @@ async function getSupabase() {
     throw new Error("Supabase SDK failed to load. Check your internet connection or script tags.");
   }
 
-  supabase = window.supabase.createClient(url, key);
-  return supabase;
+  sbClient = window.supabase.createClient(url, key);
+  return sbClient;
 }
 
 let lastDataHash = "";
