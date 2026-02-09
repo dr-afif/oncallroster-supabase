@@ -1,5 +1,5 @@
 # Local configuration
-config.js
+# config.js (Now allowed)
 
 # OS files
 .DS_Store
