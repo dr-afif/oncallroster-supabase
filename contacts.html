@@ -12,7 +12,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
     rel="stylesheet">
 
-  <script defer src="./auth/auth-config.js"></script>
+  <script src="config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script defer src="./auth/auth.js"></script>
   <script>
     (async () => {
@@ -29,7 +30,7 @@
       if (!authed) {
         const ret = location.pathname + location.search + location.hash;
         sessionStorage.setItem('post_login_redirect', ret);
-        location.replace(window.__AUTH0_CONFIG__.publicLoginPage || './login.html');
+        location.replace('./login.html');
       }
     })();
   </script>
@@ -98,7 +99,6 @@
     </button>
   </nav>
 
-  <script src="config.js"></script>
   <script src="contacts.js" defer></script>
   <script src="swipe.js" defer></script>
   <script>

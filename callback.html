@@ -10,13 +10,12 @@
 <body>
   <p>Completing sign-in…</p>
 
-  <!-- Load config and auth wrapper -->
-  <script src="./auth/auth-config.js"></script>
+  <script src="config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="./auth/auth.js"></script>
 
   <script>
     (async () => {
-      // 1. Wait for window.Auth to be available (defined in auth.js)
       if (!window.Auth) {
         await new Promise((resolve, reject) => {
           let tries = 0;
@@ -29,16 +28,11 @@
 
       try {
         await Auth.handleRedirectIfNeeded();
-
-        const next =
-          sessionStorage.getItem('post_login_redirect') ||
-          window.__AUTH0_CONFIG__.postLoginRedirect ||
-          './index.html';
-
+        const next = sessionStorage.getItem('post_login_redirect') || './index.html';
         sessionStorage.removeItem('post_login_redirect');
         location.replace(next);
       } catch (e) {
-        console.error('[Callback] Auth0 callback logic error:', e);
+        console.error('[Callback] Supabase callback error:', e);
         document.body.innerHTML = `
           <div style="padding: 2rem; color: #721c24; background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 8px;">
             <h3>Authentication Error</h3>

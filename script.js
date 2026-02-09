@@ -1,12 +1,16 @@
-const BACKEND_URL = window.APP_CONFIG?.BACKEND_URL || 'https://sheets-proxy-backend.onrender.com';
-const SNAPSHOT_URL = window.APP_CONFIG?.SNAPSHOT_URL || 'https://raw.githubusercontent.com/dr-afif/hsaas-oncallroster/main/snapshot.json';
+// script.js - Supabase version
+const SUPABASE_URL = window.APP_CONFIG?.SUPABASE_URL;
+const SUPABASE_ANON_KEY = window.APP_CONFIG?.SUPABASE_ANON_KEY;
 
-let currentTimetable = [];
-let currentContacts = [];
-let cachedContactsMap = {};
+let supabase;
+if (SUPABASE_URL && SUPABASE_ANON_KEY) {
+  supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+}
+
+let currentTimetable = []; // We won't use this as a flat array anymore, but keeping for compatibility
 let currentViewDate = getInitialDate();
 let searchTimeout;
-let lastDataHash = ""; // To avoid redundant re-renders
+let lastDataHash = "";
 
 // --- Initialization ---
 document.addEventListener('DOMContentLoaded', () => {
@@ -16,6 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function getInitialDate() {
   const now = new Date();
+  // Shifts typically start at 8 AM, so before 8 AM show previous day's shift
   if (now.getHours() < 8) now.setDate(now.getDate() - 1);
   return now;
 }
@@ -32,31 +37,30 @@ function updateHeaderDate() {
   });
   document.querySelector('#header-date').textContent = formattedDate;
 
-  // Show/Hide "Back to Today" button
   const today = getInitialDate();
   const isToday = currentViewDate.toDateString() === today.toDateString();
   document.getElementById('today-btn').classList.toggle('hidden', isToday);
 }
 
-function formatAsDDMMYYYY(date) {
-  const dd = String(date.getDate()).padStart(2, '0');
-  const mm = String(date.getMonth() + 1).padStart(2, '0');
+function formatAsYYYYMMDD(date) {
   const yyyy = date.getFullYear();
-  return `${dd}/${mm}/${yyyy}`;
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
 }
 
 function changeDate(days) {
   triggerHaptic();
   currentViewDate.setDate(currentViewDate.getDate() + days);
   updateHeaderDate();
-  renderDashboard(currentTimetable, currentContacts);
+  loadDashboard();
 }
 
 function resetToToday() {
   triggerHaptic();
   currentViewDate = getInitialDate();
   updateHeaderDate();
-  renderDashboard(currentTimetable, currentContacts);
+  loadDashboard();
 }
 
 function handleDatePicker(input) {
@@ -64,7 +68,7 @@ function handleDatePicker(input) {
   const [y, m, d] = input.value.split('-');
   currentViewDate = new Date(y, m - 1, d);
   updateHeaderDate();
-  renderDashboard(currentTimetable, currentContacts);
+  loadDashboard();
 }
 
 // --- Data Fetching ---
@@ -82,61 +86,59 @@ function showSkeleton() {
     `).join('');
 }
 
-async function fetchSnapshotData() {
-  try {
-    const res = await fetch(SNAPSHOT_URL, { cache: "no-store" });
-    if (!res.ok) throw new Error("Snapshot not found");
-    return await res.json();
-  } catch (err) {
-    console.error("Error fetching snapshot.json:", err);
-    return null;
-  }
-}
-
 async function loadDashboard() {
-  // 1. Try to load from LocalStorage first for "Instant-On"
-  const cachedData = localStorage.getItem('roster_snapshot');
+  const dateStr = formatAsYYYYMMDD(currentViewDate);
+
+  // 1. Try to load from LocalStorage for speed
+  const cacheKey = `roster_${dateStr}`;
+  const cachedData = localStorage.getItem(cacheKey);
   if (cachedData) {
     try {
-      const snapshot = JSON.parse(cachedData);
-      processAndRender(snapshot, "📂 Snapshot (Cached)");
-      lastDataHash = JSON.stringify(snapshot); // Track what we showed
+      const data = JSON.parse(cachedData);
+      renderDashboard(data, "📂 Supabase (Cached)");
+      lastDataHash = JSON.stringify(data);
     } catch (e) {
-      console.warn("Failed to parse cached snapshot", e);
+      console.warn("Cache fail", e);
     }
   }
 
-  // 2. If no cache, show skeleton
-  if (!currentTimetable.length) {
-    showSkeleton();
+  if (!lastDataHash) showSkeleton();
+
+  // 2. Fetch fresh data from Supabase View
+  if (!supabase) {
+    document.getElementById("doctor-list").innerHTML = '<p class="p-8 text-center text-muted">Supabase not configured.</p>';
+    return;
   }
 
-  // 3. Fetch fresh data from cloud
-  const freshSnapshot = await fetchSnapshotData();
-  if (freshSnapshot) {
-    const freshHash = JSON.stringify(freshSnapshot);
+  try {
+    const { data, error } = await supabase
+      .from('view_roster_merged')
+      .select('*')
+      .eq('date', dateStr);
 
-    // Only re-render if data actually changed
+    if (error) throw error;
+
+    const freshHash = JSON.stringify(data);
     if (freshHash !== lastDataHash) {
-      processAndRender(freshSnapshot, "📂 Snapshot (Cloud)");
-      localStorage.setItem('roster_snapshot', freshHash);
+      renderDashboard(data, "📂 Supabase (Live)");
+      localStorage.setItem(cacheKey, freshHash);
       lastDataHash = freshHash;
     } else {
-      document.getElementById("data-source").textContent = "📂 Snapshot (Up to date)";
+      document.getElementById("data-source").textContent = "📂 Supabase (Up to date)";
     }
-  } else if (!currentTimetable.length) {
-    document.getElementById("doctor-list").innerHTML = '<p class="p-8 text-center text-muted">Failed to load roster. Please check your connection.</p>';
-  }
-}
 
-function processAndRender(snapshot, sourceLabel) {
-  currentTimetable = snapshot.timetable?.values || [];
-  currentContacts = snapshot.contacts?.values || [];
-  cachedContactsMap = prepareContactsMap(currentContacts);
-  renderDashboard(currentTimetable, currentContacts);
-  document.getElementById("data-source").textContent = sourceLabel;
-  if (snapshot.last_updated) {
-    document.getElementById("last-updated").textContent = `Last sync: ${snapshot.last_updated}`;
+    if (data.length === 0) {
+      document.getElementById("doctor-list").innerHTML = `<p class="p-8 text-center text-muted">No roster found for ${dateStr}.</p>`;
+    }
+
+    // Update sync time
+    document.getElementById("last-updated").textContent = `Last sync: ${new Date().toLocaleTimeString()}`;
+
+  } catch (err) {
+    console.error("Supabase error:", err);
+    if (!lastDataHash) {
+      document.getElementById("doctor-list").innerHTML = '<p class="p-8 text-center text-muted">Failed to load roster. Please check your connection.</p>';
+    }
   }
 }
 
@@ -145,39 +147,31 @@ function handleSearch() {
   clearTimeout(searchTimeout);
   searchTimeout = setTimeout(() => {
     const query = document.getElementById('global-search-input').value.toLowerCase();
-    renderDashboard(currentTimetable, currentContacts, query);
-  }, 150); // 150ms debounce
+    const data = JSON.parse(localStorage.getItem(`roster_${formatAsYYYYMMDD(currentViewDate)}`) || '[]');
+    renderDashboard(data, document.getElementById("data-source").textContent, query);
+  }, 150);
 }
 
 // --- Rendering Logic ---
-function renderDashboard(timetable, contacts, query = '') {
+function renderDashboard(data, sourceLabel, query = '') {
+  document.getElementById("data-source").textContent = sourceLabel;
   const container = document.getElementById('doctor-list');
-  const html = buildDashboardHTML(timetable, contacts, query);
-  container.innerHTML = html;
-}
 
-function buildDashboardHTML(timetable, contacts, query = '') {
-  const viewDateStr = formatAsDDMMYYYY(currentViewDate);
-  if (!timetable || timetable.length === 0) return '<p>Loading schedule...</p>';
+  if (!data || data.length === 0) {
+    // Don't overwrite if we are just searching and have no results
+    if (query) {
+      container.innerHTML = `<p class="p-8 text-center text-muted">No results found for "${query}"</p>`;
+    }
+    return;
+  }
 
-  const headers = timetable[0].slice(1);
-  const targetRow = timetable.find(row => row[0] === viewDateStr);
-  if (!targetRow) return `<p class="p-4 text-center text-muted">No roster found for ${viewDateStr}.</p>`;
-
-  const contactsMap = cachedContactsMap;
-
-  // We process in original header order
-  const deptsInOrder = [];
+  // Grouping: department_id -> slot_label -> doctors
   const grouped = {};
+  const deptsInOrder = [];
 
-  headers.forEach((dept, i) => {
-    const cell = targetRow[i + 1];
-    if (!cell) return;
-    const doctors = cell.split(/\r?\n/).map(d => d.trim()).filter(Boolean);
-    if (!doctors.length) return;
-
-    const main = dept.split(' ')[0].toUpperCase();
-    const sub = dept.slice(main.length).trim() || 'General';
+  data.forEach(row => {
+    const main = row.department_id.toUpperCase();
+    const sub = row.slot_label || 'General';
 
     if (!grouped[main]) {
       grouped[main] = {};
@@ -185,28 +179,34 @@ function buildDashboardHTML(timetable, contacts, query = '') {
     }
     if (!grouped[main][sub]) grouped[main][sub] = [];
 
-    doctors.forEach(name => {
-      const phone = (contactsMap[main] && contactsMap[main][name]) || 'Unknown';
+    const names = row.merged_names ? row.merged_names.split('\n') : [];
+    const phones = row.merged_phones ? row.merged_phones.split('\n') : [];
+
+    names.forEach((name, i) => {
+      const phone = phones[i] || 'Unknown';
       grouped[main][sub].push({ name, phone });
     });
   });
 
   let html = '';
-  deptsInOrder.forEach(mainDept => {
+  deptsInOrder.sort().forEach(mainDept => {
     const subGroups = grouped[mainDept];
     let subHtml = '';
 
     Object.entries(subGroups).forEach(([subDept, doctors]) => {
       const filteredDoctors = doctors.filter(d =>
-        mainDept.toLowerCase().includes(query) || d.name.toLowerCase().includes(query) || d.phone.includes(query)
+        mainDept.toLowerCase().includes(query) ||
+        subDept.toLowerCase().includes(query) ||
+        d.name.toLowerCase().includes(query) ||
+        d.phone.includes(query)
       );
 
       if (filteredDoctors.length > 0) {
-        if (subDept !== 'General') {
+        if (subDept !== 'General' && subDept !== mainDept) {
           subHtml += `<h3>${subDept}</h3>`;
         }
         filteredDoctors.forEach(({ name, phone }) => {
-          subHtml += renderDoctorRow(name, phone, mainDept);
+          subHtml += renderDoctorRow(name, phone);
         });
       }
     });
@@ -227,38 +227,19 @@ function buildDashboardHTML(timetable, contacts, query = '') {
     }
   });
 
-  return html || `<p class="p-8 text-center text-muted">No results found for "${query}"</p>`;
-}
-
-function prepareContactsMap(contacts) {
-  const map = {};
-  if (!contacts || contacts.length === 0) return map;
-  const headerRow = contacts[0];
-  for (let i = 0; i < headerRow.length; i += 2) {
-    const nameHeader = headerRow[i];
-    if (!nameHeader) continue;
-    const deptMatch = nameHeader.match(/^(.+?)\s+NAME$/i);
-    if (!deptMatch) continue;
-    const dept = deptMatch[1].trim().toUpperCase();
-    map[dept] = {};
-    for (let j = 1; j < contacts.length; j++) {
-      const name = contacts[j][i]?.trim();
-      const phone = contacts[j][i + 1]?.trim();
-      if (name && phone) map[dept][name] = phone;
-    }
-  }
-  return map;
+  container.innerHTML = html || `<p class="p-8 text-center text-muted">No results found for "${query}"</p>`;
 }
 
 function renderDoctorRow(name, phone) {
-  const tel = phone !== 'Unknown' ? `tel:${phone}` : '#';
-  const wa = phone !== 'Unknown' ? `https://wa.me/6${phone.replace(/\D/g, '')}` : '#';
+  const cleanPhone = phone ? phone.replace(/\D/g, '') : '';
+  const tel = cleanPhone ? `tel:${phone}` : '#';
+  const wa = cleanPhone ? `https://wa.me/6${cleanPhone}` : '#';
 
   return `
         <div class="doctor-row">
             <div class="doctor-info">
                 <strong>${name}</strong>
-                <span>${phone}</span>
+                <span>${phone || 'No phone'}</span>
             </div>
             <div class="contact-icons">
                 <a href="${tel}" onclick="triggerHaptic()" class="icon-link">
@@ -280,21 +261,18 @@ async function shareCardAsImage(cardId, deptName) {
   triggerHaptic(20);
   const card = document.getElementById(cardId);
   const shareBtn = card.querySelector('.share-card-btn');
-  const contactIcons = card.querySelectorAll('.contact-icons');
 
-  // Prepare clones/styles for high quality capture
   shareBtn.style.display = 'none';
 
   try {
-    // Show loading state if needed
     const canvas = await html2canvas(card, {
-      scale: 3, // Higher scale for better text clarity
+      scale: 3,
       useCORS: true,
       backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--bg-card').trim(),
       logging: false,
       onclone: (clonedDoc) => {
         const clonedCard = clonedDoc.getElementById(cardId);
-        clonedCard.style.borderRadius = '0'; // Avoid edge artifacts in some browsers
+        clonedCard.style.borderRadius = '0';
       }
     });
 
@@ -310,7 +288,6 @@ async function shareCardAsImage(cardId, deptName) {
         text: `On-Call Roster for ${deptName} (${dateStr})`
       });
     } else {
-      // Fallback: Download
       const link = document.createElement('a');
       link.download = fileName;
       link.href = canvas.toDataURL('image/png');

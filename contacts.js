@@ -1,5 +1,13 @@
-const SNAPSHOT_URL = window.APP_CONFIG?.SNAPSHOT_URL || 'https://raw.githubusercontent.com/dr-afif/hsaas-oncallroster/main/snapshot.json';
-let allContacts = { depts: [], deptMap: {} };
+// contacts.js - Supabase version
+const SUPABASE_URL = window.APP_CONFIG?.SUPABASE_URL;
+const SUPABASE_ANON_KEY = window.APP_CONFIG?.SUPABASE_ANON_KEY;
+
+let supabase;
+if (SUPABASE_URL && SUPABASE_ANON_KEY) {
+  supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+}
+
+let allContactsData = [];
 let lastContactsHash = "";
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -22,76 +30,68 @@ function triggerHaptic(duration = 10) {
 
 async function fetchContacts() {
   // 1. Try Cache
-  const cached = localStorage.getItem('roster_snapshot');
+  const cached = localStorage.getItem('contacts_cache');
   if (cached) {
     try {
-      const data = JSON.parse(cached);
-      const raw = data.contacts?.values || [];
-      allContacts = processRawContacts(raw);
-      renderDepartments(allContacts);
-      lastContactsHash = JSON.stringify(raw);
+      allContactsData = JSON.parse(cached);
+      renderDepartments(allContactsData);
+      lastContactsHash = JSON.stringify(allContactsData);
     } catch (e) { }
   }
 
-  // 2. Fetch fresh from cloud (using the same snapshot)
-  try {
-    const res = await fetch(SNAPSHOT_URL, { cache: "no-store" });
-    const data = await res.json();
-    const raw = data.contacts?.values || [];
-    const freshHash = JSON.stringify(raw);
+  // 2. Fetch fresh from Supabase
+  if (!supabase) return;
 
+  try {
+    const { data, error } = await supabase
+      .from('contacts')
+      .select('full_name, phone_number, department_id')
+      .eq('active', true)
+      .order('full_name');
+
+    if (error) throw error;
+
+    const freshHash = JSON.stringify(data);
     if (freshHash !== lastContactsHash) {
-      allContacts = processRawContacts(raw);
-      renderDepartments(allContacts);
+      allContactsData = data;
+      renderDepartments(data);
+      localStorage.setItem('contacts_cache', freshHash);
       lastContactsHash = freshHash;
-      // Note: script.js also saves this, but we save it here too just in case
-      localStorage.setItem('roster_snapshot', JSON.stringify(data));
     }
   } catch (e) {
     console.error("Fetch failed", e);
   }
 }
 
-function processRawContacts(rawData) {
-  if (!rawData || !rawData.length) return { depts: [], deptMap: {} };
-  const headers = rawData[0];
-  const depts = [];
-  const deptMap = {};
-
-  for (let j = 0; j < headers.length; j += 2) {
-    const head = headers[j];
-    if (!head) continue;
-    const deptMatch = head.match(/^(.+?)\s+NAME$/i);
-    if (!deptMatch) continue;
-
-    const deptName = deptMatch[1].trim().toUpperCase();
-    depts.push(deptName);
-    deptMap[deptName] = [];
-
-    for (let i = 1; i < rawData.length; i++) {
-      const row = rawData[i];
-      const name = row[j]?.trim();
-      const phone = row[j + 1]?.trim();
-      if (name && phone) deptMap[deptName].push({ name, phone });
-    }
-  }
-  return { depts, deptMap };
-}
-
 function handleSearch() {
   const query = document.getElementById('global-search-input').value.toLowerCase();
-  renderDepartments(allContacts, query);
+  renderDepartments(allContactsData, query);
 }
 
 function renderDepartments(data, query = '') {
   const container = document.getElementById('departments');
-  if (!data.depts.length) return;
+  if (!data || !data.length) {
+    container.innerHTML = '<p class="p-8 text-center text-muted">No contacts found.</p>';
+    return;
+  }
+
+  // Group by department
+  const grouped = {};
+  data.forEach(c => {
+    const dept = c.department_id || 'OTHER';
+    if (!grouped[dept]) grouped[dept] = [];
+    grouped[dept].push(c);
+  });
+
+  const depts = Object.keys(grouped).sort();
 
   let html = '';
-  data.depts.forEach(dept => {
-    const doctors = data.deptMap[dept];
+  depts.forEach(dept => {
+    const doctors = grouped[dept];
     const filtered = doctors.filter(d =>
-      dept.toLowerCase().includes(query) || d.name.toLowerCase().includes(query) || d.phone.includes(query)
+      dept.toLowerCase().includes(query) ||
+      d.full_name.toLowerCase().includes(query) ||
+      d.phone_number.includes(query)
     );
 
     if (filtered.length > 0) {
@@ -102,13 +102,13 @@ function renderDepartments(data, query = '') {
                         <svg class="arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
                     </h2>
                     <div class="contacts-grid ${query ? '' : 'hidden'}">
-                        ${filtered.map(d => renderContactRow(d.name, d.phone, dept)).join('')}
+                        ${filtered.map(d => renderContactRow(d.full_name, d.phone_number, dept)).join('')}
                     </div>
                 </div>
             `;
     }
   });
-  container.innerHTML = html;
+  container.innerHTML = html || `<p class="p-8 text-center text-muted">No results found for "${query}"</p>`;
 }
 
 function toggleDept(el) {
@@ -119,13 +119,15 @@ function toggleDept(el) {
 }
 
 function renderContactRow(name, phone, dept) {
-  const tel = phone !== 'Unknown' ? `tel:${phone}` : '#';
-  const wa = phone !== 'Unknown' ? `https://wa.me/6${phone.replace(/\D/g, '')}` : '#';
+  const cleanPhone = phone ? phone.replace(/\D/g, '') : '';
+  const tel = cleanPhone ? `tel:${phone}` : '#';
+  const wa = cleanPhone ? `https://wa.me/6${cleanPhone}` : '#';
+
   return `
         <div class="doctor-row">
             <div class="doctor-info">
                 <strong>${name}</strong>
-                <span>${phone}</span>
+                <span>${phone || 'No phone'}</span>
             </div>
             <div class="contact-icons">
                 <a href="${tel}" onclick="triggerHaptic()" class="icon-link">
