@@ -1,10 +1,29 @@
 // contacts.js - Supabase version
-const SUPABASE_URL = window.APP_CONFIG?.SUPABASE_URL;
-const SUPABASE_ANON_KEY = window.APP_CONFIG?.SUPABASE_ANON_KEY;
+let supabase = null;
 
-let supabase;
-if (SUPABASE_URL && SUPABASE_ANON_KEY) {
-  supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+/**
+ * Initialize Supabase client
+ */
+async function getSupabase() {
+  if (supabase) return supabase;
+
+  const url = window.APP_CONFIG?.SUPABASE_URL;
+  const key = window.APP_CONFIG?.SUPABASE_ANON_KEY;
+
+  if (!url || !key || url.includes('PLACEHOLDER')) {
+    throw new Error("Supabase configuration is missing.");
+  }
+
+  if (!window.supabase) {
+    let tries = 0;
+    while (!window.supabase && tries < 50) {
+      await new Promise(r => setTimeout(r, 100));
+      tries++;
+    }
+  }
+
+  supabase = window.supabase.createClient(url, key);
+  return supabase;
 }
 
 let allContactsData = [];
@@ -12,19 +31,32 @@ let lastContactsHash = "";
 
 document.addEventListener('DOMContentLoaded', () => {
   updateHeaderDate();
-  fetchContacts();
+  fetchContacts().catch(err => {
+    console.error("Contacts Init Error:", err);
+    showError(err.message);
+  });
 });
 
 function updateHeaderDate() {
   const now = new Date();
-  document.querySelector('#header-date').textContent = now.toLocaleDateString('en-MY', {
-    weekday: 'long', year: 'numeric', month: 'short', day: 'numeric'
-  });
+  const headerEl = document.querySelector('#header-date');
+  if (headerEl) {
+    headerEl.textContent = now.toLocaleDateString('en-MY', {
+      weekday: 'long', year: 'numeric', month: 'short', day: 'numeric'
+    });
+  }
 }
 
 function triggerHaptic(duration = 10) {
   if (window.navigator?.vibrate) {
     window.navigator.vibrate(duration);
+  }
+}
+
+function showError(msg) {
+  const container = document.getElementById('departments');
+  if (container) {
+    container.innerHTML = `<p class="p-8 text-center text-muted">${msg}</p>`;
   }
 }
 
@@ -39,11 +71,9 @@ async function fetchContacts() {
     } catch (e) { }
   }
 
-  // 2. Fetch fresh from Supabase
-  if (!supabase) return;
-
   try {
-    const { data, error } = await supabase
+    const sb = await getSupabase();
+    const { data, error } = await sb
       .from('contacts')
       .select('full_name, phone_number, department_id')
       .eq('active', true)
@@ -58,18 +88,23 @@ async function fetchContacts() {
       localStorage.setItem('contacts_cache', freshHash);
       lastContactsHash = freshHash;
     }
-  } catch (e) {
-    console.error("Fetch failed", e);
+  } catch (err) {
+    console.error("Contacts Load Error:", err);
+    if (!lastContactsHash) {
+      showError(err.message || 'Failed to load contacts.');
+    }
   }
 }
 
 function handleSearch() {
-  const query = document.getElementById('global-search-input').value.toLowerCase();
+  const query = document.getElementById('global-search-input')?.value.toLowerCase() || '';
   renderDepartments(allContactsData, query);
 }
 
 function renderDepartments(data, query = '') {
   const container = document.getElementById('departments');
+  if (!container) return;
+
   if (!data || !data.length) {
     container.innerHTML = '<p class="p-8 text-center text-muted">No contacts found.</p>';
     return;
@@ -114,7 +149,7 @@ function renderDepartments(data, query = '') {
 function toggleDept(el) {
   el.classList.toggle('collapsed');
   const grid = el.nextElementSibling;
-  grid.classList.toggle('hidden');
+  if (grid) grid.classList.toggle('hidden');
   if (window.navigator?.vibrate) window.navigator.vibrate(5);
 }
 
