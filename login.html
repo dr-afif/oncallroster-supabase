@@ -1,61 +1,100 @@
 <!doctype html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8" />
   <title>Login — HSAAS On-Call Roster</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin:0; display:grid; min-height:100dvh; place-items:center; }
-    .card { padding: 2rem; max-width: 420px; width: 92vw; border: 1px solid #e5e7eb; border-radius: 14px; box-shadow: 0 4px 24px rgba(0,0,0,.06); }
-    h1 { margin: 0 0 .5rem; font-size: 1.4rem; }
-    p { color:#555; margin: 0 0 1.25rem; }
-    button { padding:.7rem 1rem; border-radius:10px; border:0; cursor:pointer; font-weight:600; }
-    .primary { background:#000; color:#fff; }
-    #status { margin-top:.75rem; color:#666; font-size:.9rem; }
+    body {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      margin: 0;
+      display: grid;
+      min-height: 100dvh;
+      place-items: center;
+    }
+
+    .card {
+      padding: 2rem;
+      max-width: 420px;
+      width: 92vw;
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, .06);
+    }
+
+    h1 {
+      margin: 0 0 .5rem;
+      font-size: 1.4rem;
+    }
+
+    p {
+      color: #555;
+      margin: 0 0 1.25rem;
+    }
+
+    button {
+      padding: .7rem 1rem;
+      border-radius: 10px;
+      border: 0;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .primary {
+      background: #000;
+      color: #fff;
+    }
+
+    #status {
+      margin-top: .75rem;
+      color: #666;
+      font-size: .9rem;
+    }
   </style>
 
-  <!-- Load config & auth (use defer so DOM exists and order is preserved) -->
-  <script defer src="./auth/auth-config.js"></script>
+  <script src="config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script defer src="./auth/auth.js"></script>
 </head>
+
 <body>
   <div class="card">
     <h1>HSAAS On-Call Roster</h1>
     <p>Sign in with your <strong>@upm.edu.my</strong> account.</p>
-    <button id="loginBtn" class="primary">Sign in</button>
+    <button id="loginBtn" class="primary">Sign in with Google</button>
     <div id="status">Checking session…</div>
   </div>
 
   <script>
-  (async () => {
-    // Wait up to ~6s for window.Auth (auth.js) to define itself
-    if (!window.Auth) {
-      await new Promise((resolve, reject) => {
-        let tries = 0;
-        const iv = setInterval(() => {
-          if (window.Auth) { clearInterval(iv); resolve(); }
-          else if (++tries > 300) { clearInterval(iv); reject(new Error("Auth never loaded")); }
-        }, 20);
-      });
-    }
-
-    try {
-      await Auth.initAuth();
-      document.getElementById('loginBtn').addEventListener('click', () => Auth.login());
-
-      if (await Auth.isAuthenticated()) {
-        const next = sessionStorage.getItem('post_login_redirect') || window.__AUTH0_CONFIG__.postLoginRedirect || './index.html';
-        sessionStorage.removeItem('post_login_redirect');
-        location.replace(next);
-      } else {
-        document.getElementById('status').textContent = 'Not signed in.';
+    (async () => {
+      if (!window.Auth) {
+        await new Promise((resolve, reject) => {
+          let tries = 0;
+          const iv = setInterval(() => {
+            if (window.Auth) { clearInterval(iv); resolve(); }
+            else if (++tries > 300) { clearInterval(iv); reject(new Error("Auth never loaded")); }
+          }, 20);
+        });
       }
-    } catch (e) {
-      console.error('Login page init error:', e);
-      document.getElementById('status').textContent = 'Error loading auth. Check console.';
-    }
-  })();
-</script>
 
+      try {
+        await Auth.initAuth();
+        document.getElementById('loginBtn').addEventListener('click', () => Auth.login());
+
+        if (await Auth.isAuthenticated()) {
+          const next = sessionStorage.getItem('post_login_redirect') || './index.html';
+          sessionStorage.removeItem('post_login_redirect');
+          location.replace(next);
+        } else {
+          document.getElementById('status').textContent = 'Not signed in.';
+        }
+      } catch (e) {
+        console.error('Login page init error:', e);
+        document.getElementById('status').textContent = 'Error loading auth. Check console.';
+      }
+    })();
+  </script>
 </body>
+
 </html>

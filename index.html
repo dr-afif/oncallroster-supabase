@@ -15,10 +15,12 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
     rel="stylesheet">
 
-  <script defer src="./auth/auth-config.js"></script>
+  <script src="config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script defer src="./auth/auth.js"></script>
   <script>
     (async () => {
+      // Wait for Auth module to load
       if (!window.Auth) {
         await new Promise((resolve) => {
           let tries = 0; const iv = setInterval(() => {
@@ -31,13 +33,10 @@
         await Auth.initAuth();
         let authed = await Auth.isAuthenticated();
         if (!authed) {
-          await new Promise(r => setTimeout(r, 800));
-          authed = await Auth.isAuthenticated();
-        }
-        if (!authed) {
+          // Store current path for redirect after login
           const ret = location.pathname + location.search + location.hash;
           sessionStorage.setItem('post_login_redirect', ret);
-          location.replace(window.__AUTH0_CONFIG__.publicLoginPage || './login.html');
+          location.replace('./login.html');
         }
       } catch (err) { console.error("Auth Guard error:", err); }
     })();
@@ -132,7 +131,6 @@
   </nav>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-  <script src="config.js"></script>
   <script src="script.js" defer></script>
   <script src="swipe.js" defer></script>
   <script>

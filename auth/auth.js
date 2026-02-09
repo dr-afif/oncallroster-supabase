@@ -1,121 +1,80 @@
-// auth/auth.js
+// auth/auth.js - Supabase version
 (function () {
-  // Try CDNs first (fast when they work), then your local vendored copy.
-  const SDK_SOURCES = [
-    "https://cdn.jsdelivr.net/npm/@auth0/auth0-spa-js@2/dist/auth0-spa-js.production.js",
-    "https://unpkg.com/@auth0/auth0-spa-js@2/dist/auth0-spa-js.production.js",
-    // Local fallback (always available once you vendor the file)
-    "./auth/vendor/auth0-spa-js.production.js",
-  ];
+  let supabaseClient = null;
 
-  let auth0Client = null;
-  let sdkLoaded = false;
+  async function getSupabase() {
+    if (supabaseClient) return supabaseClient;
 
-  function loadScript(url) {
-    return new Promise((resolve, reject) => {
-      const s = document.createElement("script");
-      s.src = url;
-      s.async = true;
-      s.onload = () => resolve(url);
-      s.onerror = () => reject(new Error("Failed to load: " + url));
-      document.head.appendChild(s);
-    });
-  }
-
-  async function loadSdkWithFallbacks() {
-    if (sdkLoaded) return;
-    let lastErr;
-    for (const url of SDK_SOURCES) {
-      try {
-        await loadScript(url);
-        if (typeof window.auth0 === "object" || typeof window.createAuth0Client === "function") {
-          sdkLoaded = true;
-          return;
-        }
-      } catch (e) {
-        lastErr = e;
-        // try next source
-      }
+    // Check if SDK is loaded
+    if (!window.supabase) {
+      // Wait briefly if it's still loading
+      await new Promise(r => setTimeout(r, 100));
+      if (!window.supabase) throw new Error("Supabase SDK not found. Ensure script tag is present.");
     }
-    throw lastErr || new Error("Auth0 SDK could not be loaded from any source.");
+
+    const { SUPABASE_URL, SUPABASE_ANON_KEY } = window.APP_CONFIG || {};
+    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+      throw new Error("Supabase config missing in APP_CONFIG.");
+    }
+
+    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    return supabaseClient;
   }
 
   async function initAuth() {
-    if (auth0Client) return auth0Client;
-
-    console.log("[Auth] Initializing with config:", window.__AUTH0_CONFIG__);
-    await loadSdkWithFallbacks();
-
-    const createClient =
-      (window.auth0 && window.auth0.createAuth0Client) || window.createAuth0Client;
-
-    if (typeof createClient !== "function") {
-      throw new Error("Auth0 SDK loaded but createAuth0Client is unavailable.");
-    }
-
-    auth0Client = await createClient({
-      domain: window.__AUTH0_CONFIG__.domain,
-      clientId: window.__AUTH0_CONFIG__.clientId,
-      authorizationParams: {
-        redirect_uri: window.__AUTH0_CONFIG__.redirectUri,
-        scope: "openid profile email offline_access"
-      },
-      useRefreshTokens: true,
-      cacheLocation: "localstorage"
-    });
-
-    return auth0Client;
+    const sb = await getSupabase();
+    // Supabase handles the session automatically via localStorage
+    return sb;
   }
 
   async function login() {
-    const client = await initAuth();
-    console.log("[Auth] Starting login redirect to:", window.__AUTH0_CONFIG__.redirectUri);
-    await client.loginWithRedirect();
+    const sb = await getSupabase();
+    const { error } = await sb.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin + window.location.pathname.replace(/\/[^/]*$/, '/callback.html'),
+        queryParams: {
+          hd: 'upm.edu.my' // Optional: Hint to only allow UPM accounts if configured in Google
+        }
+      }
+    });
+    if (error) console.error("Login error:", error.message);
   }
 
   async function logout() {
-    const client = await initAuth();
-    await client.logout({
-      logoutParams: {
-        returnTo:
-          window.__AUTH0_CONFIG__.publicLoginPage ||
-          window.__AUTH0_CONFIG__.postLoginRedirect ||
-          "./login.html",
-      },
-    });
+    const sb = await getSupabase();
+    await sb.auth.signOut();
+    location.replace('./login.html');
   }
 
   async function isAuthenticated() {
-    const client = await initAuth();
-    return client.isAuthenticated();
+    const sb = await getSupabase();
+    const { data: { session } } = await sb.auth.getSession();
+    return !!session;
   }
 
   async function getUser() {
-    const client = await initAuth();
-    return client.getUser();
-  }
-
-  async function getAccessToken(options = {}) {
-    const client = await initAuth();
-    return client.getAccessTokenSilently(options);
+    const sb = await getSupabase();
+    const { data: { user } } = await sb.auth.getUser();
+    return user;
   }
 
   async function handleRedirectIfNeeded() {
-    const params = new URLSearchParams(window.location.search);
-    if (params.has("code") && params.has("state")) {
-      const client = await initAuth();
-      await client.handleRedirectCallback();
-    }
+    const sb = await getSupabase();
+    // Supabase JS handles the hash/code exchange automatically on initialization
+    // but we can wait for the session to be sure.
+    const { data: { session }, error } = await sb.auth.getSession();
+    if (error) throw error;
+    return session;
   }
 
-  // Expose API immediately
+  // Expose API
   window.Auth = {
     initAuth,
     login,
     logout,
     isAuthenticated,
     getUser,
-    getAccessToken,
     handleRedirectIfNeeded,
   };
 })();
