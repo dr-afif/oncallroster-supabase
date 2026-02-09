@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <title>Signing you in…</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+</head>
+
+<body>
+  <p>Completing sign-in…</p>
+
+  <!-- Load config and auth wrapper -->
+  <script src="./auth/auth-config.js"></script>
+  <script src="./auth/auth.js"></script>
+
+  <script>
+    (async () => {
+      // 1. Wait for window.Auth to be available (defined in auth.js)
+      if (!window.Auth) {
+        await new Promise((resolve, reject) => {
+          let tries = 0;
+          const iv = setInterval(() => {
+            if (window.Auth) { clearInterval(iv); resolve(); }
+            else if (++tries > 300) { clearInterval(iv); reject(new Error("Auth never loaded")); }
+          }, 20);
+        });
+      }
+
+      try {
+        await Auth.handleRedirectIfNeeded();
+
+        const next =
+          sessionStorage.getItem('post_login_redirect') ||
+          window.__AUTH0_CONFIG__.postLoginRedirect ||
+          './index.html';
+
+        sessionStorage.removeItem('post_login_redirect');
+        location.replace(next);
+      } catch (e) {
+        console.error('[Callback] Auth0 callback logic error:', e);
+        document.body.innerHTML = `
+          <div style="padding: 2rem; color: #721c24; background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 8px;">
+            <h3>Authentication Error</h3>
+            <p>${e.message}</p>
+            <p>Please check the console for details, or <a href="./login.html">try logging in again</a>.</p>
+          </div>
+        `;
+      }
+    })();
+  </script>
+</body>
+
+</html>

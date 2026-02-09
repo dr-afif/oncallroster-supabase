@@ -1,0 +1,17 @@
+# Local configuration
+config.js
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temp/Cache
+_pgbackup/
+pinegrow.json
+projectdb.pgml
+node_modules/
+.vscode/
+
+# Build artifacts
+dist/
+build/

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Logging out…</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+</head>
+<body>
+  <p>Signing you out…</p>
+
+  <!-- Load config + auth -->
+  <script src="./auth/auth-config.js"></script>
+  <script src="./auth/auth.js"></script>
+
+  <script>
+    (async () => {
+      try {
+        await Auth.initAuth();
+        // Always send back to login.html (public page)
+        await Auth.logout();
+      } catch (e) {
+        console.error("Logout error:", e);
+        // If something fails, just force navigate
+        location.replace(window.__AUTH0_CONFIG__.publicLoginPage || "./login.html");
+      }
+    })();
+  </script>
+</body>
+</html>
