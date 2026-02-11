@@ -14,6 +14,18 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
     rel="stylesheet">
+  <style>
+    body {
+      visibility: hidden;
+      opacity: 0;
+    }
+
+    body.ready {
+      visibility: visible;
+      opacity: 1;
+      transition: opacity 0.2s ease-in;
+    }
+  </style>
 
   <script src="config.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -37,8 +49,15 @@
           const ret = location.pathname + location.search + location.hash;
           sessionStorage.setItem('post_login_redirect', ret);
           location.replace('./login.html');
+        } else {
+          // Show the page only if authenticated
+          document.body.classList.add('ready');
         }
-      } catch (err) { console.error("Auth Guard error:", err); }
+      } catch (err) {
+        console.error("Auth Guard error:", err);
+        // Fallback to show page if auth fails unexpectedly
+        document.body.classList.add('ready');
+      }
     })();
   </script>
 </head>
