@@ -154,7 +154,7 @@ async function loadDashboard() {
 
     const [rosterRes, deptsRes] = await Promise.all([
       sb.from('view_roster_merged').select('*').eq('date', dateStr).neq('department_id', 'ADMIN').order('slot_order', { ascending: true }),
-      sb.from('departments').select('id').eq('active', true).neq('id', 'ADMIN').order('created_at', { ascending: true })
+      sb.from('departments').select('id').eq('active', true).neq('id', 'ADMIN').order('order_index', { ascending: true })
     ]);
 
     if (rosterRes.error) throw rosterRes.error;
@@ -162,7 +162,10 @@ async function loadDashboard() {
 
     const { data } = rosterRes;
     const orderedDepts = deptsRes.data.map(d => d.id.toUpperCase());
+
+    // Always update global order and cache
     window._orderedDepts = orderedDepts;
+    localStorage.setItem('dept_order_cache', JSON.stringify(orderedDepts));
 
     console.log(`Received ${rosterRes.data.length} rows for ${dateStr}`);
 
@@ -170,7 +173,6 @@ async function loadDashboard() {
     if (freshHash !== lastDataHash) {
       renderDashboard(data, "📂 Supabase (Live)");
       localStorage.setItem(cacheKey, freshHash);
-      localStorage.setItem('dept_order_cache', JSON.stringify(orderedDepts));
       lastDataHash = freshHash;
     } else {
       const sourceEl = document.getElementById("data-source");
