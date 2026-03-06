@@ -32,6 +32,7 @@ async function getSupabase() {
 }
 
 let lastDataHash = "";
+let allContactsMap = {}; // Global map for name matching
 let currentViewDate = getInitialDate();
 let searchTimeout;
 
@@ -140,6 +141,7 @@ async function loadDashboard() {
       const data = JSON.parse(cachedData);
       window._orderedDepts = JSON.parse(localStorage.getItem('dept_order_cache') || '[]');
       window._deptNames = JSON.parse(localStorage.getItem('dept_names_cache') || '{}');
+      allContactsMap = JSON.parse(localStorage.getItem('contacts_cache_map') || '{}');
       renderDashboard(data, "📂 Supabase (Cached)");
       lastDataHash = JSON.stringify(data);
     } catch (e) {
@@ -153,13 +155,15 @@ async function loadDashboard() {
     const sb = await getSupabase();
     console.log("Fetching roster for:", dateStr);
 
-    const [rosterRes, deptsRes] = await Promise.all([
+    const [rosterRes, deptsRes, allContactsRes] = await Promise.all([
       sb.from('view_roster_merged').select('*').eq('date', dateStr).neq('department_id', 'ADMIN').order('slot_order', { ascending: true }),
-      sb.from('departments').select('id, name').eq('active', true).neq('id', 'ADMIN').order('order_index', { ascending: true })
+      sb.from('departments').select('id, name').eq('active', true).neq('id', 'ADMIN').order('order_index', { ascending: true }),
+      sb.from('contacts').select('short_name, phone_number, department_id').eq('active', true)
     ]);
 
     if (rosterRes.error) throw rosterRes.error;
     if (deptsRes.error) throw deptsRes.error;
+    if (allContactsRes.error) console.warn("Contacts fetch failed", allContactsRes.error);
 
     const { data } = rosterRes;
     const orderedDepts = deptsRes.data.map(d => d.id.toUpperCase());
@@ -168,11 +172,22 @@ async function loadDashboard() {
       deptNames[d.id.toUpperCase()] = d.name.replace(/department/gi, '').trim().toUpperCase();
     });
 
+    // Build contacts map for fuzzy matching
+    const contactMap = {};
+    if (allContactsRes.data) {
+      allContactsRes.data.forEach(c => {
+        const key = `${c.department_id}:${c.short_name}`.toUpperCase();
+        contactMap[key] = c.phone_number;
+      });
+    }
+    allContactsMap = contactMap;
+
     // Always update global states and cache
     window._orderedDepts = orderedDepts;
     window._deptNames = deptNames;
     localStorage.setItem('dept_order_cache', JSON.stringify(orderedDepts));
     localStorage.setItem('dept_names_cache', JSON.stringify(deptNames));
+    localStorage.setItem('contacts_cache_map', JSON.stringify(contactMap));
 
     console.log(`Received ${rosterRes.data.length} rows for ${dateStr}`);
 
@@ -247,7 +262,16 @@ function renderDashboard(data, sourceLabel, query = '') {
     const phones = row.merged_phones ? row.merged_phones.split('\n') : [];
 
     names.forEach((name, i) => {
-      const phone = phones[i] || 'Unknown';
+      let phone = phones[i] || '-';
+
+      // Fix: If phone is missing or '-', try to match from contacts pool
+      if (phone === '-' || !phone || phone === 'Unknown') {
+        const lookupKey = `${row.department_id}:${name}`.toUpperCase();
+        if (allContactsMap[lookupKey]) {
+          phone = allContactsMap[lookupKey];
+        }
+      }
+
       grouped[main][sub].push({ name, phone });
     });
   });
