@@ -139,6 +139,7 @@ async function loadDashboard() {
     try {
       const data = JSON.parse(cachedData);
       window._orderedDepts = JSON.parse(localStorage.getItem('dept_order_cache') || '[]');
+      window._deptNames = JSON.parse(localStorage.getItem('dept_names_cache') || '{}');
       renderDashboard(data, "📂 Supabase (Cached)");
       lastDataHash = JSON.stringify(data);
     } catch (e) {
@@ -154,7 +155,7 @@ async function loadDashboard() {
 
     const [rosterRes, deptsRes] = await Promise.all([
       sb.from('view_roster_merged').select('*').eq('date', dateStr).neq('department_id', 'ADMIN').order('slot_order', { ascending: true }),
-      sb.from('departments').select('id').eq('active', true).neq('id', 'ADMIN').order('order_index', { ascending: true })
+      sb.from('departments').select('id, name').eq('active', true).neq('id', 'ADMIN').order('order_index', { ascending: true })
     ]);
 
     if (rosterRes.error) throw rosterRes.error;
@@ -162,10 +163,16 @@ async function loadDashboard() {
 
     const { data } = rosterRes;
     const orderedDepts = deptsRes.data.map(d => d.id.toUpperCase());
+    const deptNames = {};
+    deptsRes.data.forEach(d => {
+      deptNames[d.id.toUpperCase()] = d.name.replace(/department/gi, '').trim();
+    });
 
-    // Always update global order and cache
+    // Always update global states and cache
     window._orderedDepts = orderedDepts;
+    window._deptNames = deptNames;
     localStorage.setItem('dept_order_cache', JSON.stringify(orderedDepts));
+    localStorage.setItem('dept_names_cache', JSON.stringify(deptNames));
 
     console.log(`Received ${rosterRes.data.length} rows for ${dateStr}`);
 
@@ -270,11 +277,12 @@ function renderDashboard(data, sourceLabel, query = '') {
     });
 
     if (subHtml) {
+      const displayName = (window._deptNames && window._deptNames[mainDept]) || mainDept;
       const cardId = `dept-card-${mainDept.replace(/\s+/g, '-')}`;
       html += `
                 <div class="doctor-card" id="${cardId}">
                     <div class="card-header">
-                        <h2>${mainDept}</h2>
+                        <h2>${displayName}</h2>
                         <button class="share-card-btn" onclick="shareCardAsImage('${cardId}', '${mainDept}')" title="Share as Image">
                             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
                         </button>

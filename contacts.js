@@ -67,6 +67,7 @@ async function fetchContacts() {
     try {
       allContactsData = JSON.parse(cached);
       window._orderedDepts = JSON.parse(localStorage.getItem('contacts_order_cache') || '[]');
+      window._deptNames = JSON.parse(localStorage.getItem('contacts_names_cache') || '{}');
       renderDepartments(allContactsData);
       lastContactsHash = JSON.stringify(allContactsData);
     } catch (e) { }
@@ -84,10 +85,16 @@ async function fetchContacts() {
 
     const data = contactsRes.data;
     const orderedDepts = deptsRes.data.map(d => d.id);
+    const deptNames = {};
+    deptsRes.data.forEach(d => {
+      deptNames[d.id] = d.name.replace(/department/gi, '').trim();
+    });
 
     // Always update global order and cache
     window._orderedDepts = orderedDepts;
+    window._deptNames = deptNames;
     localStorage.setItem('contacts_order_cache', JSON.stringify(orderedDepts));
+    localStorage.setItem('contacts_names_cache', JSON.stringify(deptNames));
 
     const freshHash = JSON.stringify(data);
     if (freshHash !== lastContactsHash) {
@@ -135,8 +142,10 @@ function renderDepartments(data, query = '') {
   depts.forEach(dept => {
     const doctors = grouped[dept];
     if (!doctors) return;
+    const displayName = (window._deptNames && window._deptNames[dept]) || dept;
     const filtered = doctors.filter(d =>
       dept.toLowerCase().includes(query) ||
+      displayName.toLowerCase().includes(query) ||
       d.full_name.toLowerCase().includes(query) ||
       d.phone_number.includes(query)
     );
@@ -145,7 +154,7 @@ function renderDepartments(data, query = '') {
       html += `
                 <div class="doctor-card">
                     <h2 onclick="toggleDept(this)" class="${query ? '' : 'collapsed'}">
-                        ${dept}
+                        ${displayName}
                         <svg class="arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
                     </h2>
                     <div class="contacts-grid ${query ? '' : 'hidden'}">
