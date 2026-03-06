@@ -248,6 +248,7 @@ function renderDashboard(data, sourceLabel, query = '') {
   let html = '';
   deptsInOrder.forEach(mainDept => {
     const subGroups = grouped[mainDept];
+    if (!subGroups) return;
     let subHtml = '';
 
     Object.entries(subGroups).forEach(([subDept, doctors]) => {
