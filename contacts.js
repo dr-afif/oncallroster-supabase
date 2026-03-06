@@ -134,6 +134,7 @@ function renderDepartments(data, query = '') {
   let html = '';
   depts.forEach(dept => {
     const doctors = grouped[dept];
+    if (!doctors) return;
     const filtered = doctors.filter(d =>
       dept.toLowerCase().includes(query) ||
       d.full_name.toLowerCase().includes(query) ||
