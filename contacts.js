@@ -66,6 +66,7 @@ async function fetchContacts() {
   if (cached) {
     try {
       allContactsData = JSON.parse(cached);
+      window._orderedDepts = JSON.parse(localStorage.getItem('contacts_order_cache') || '[]');
       renderDepartments(allContactsData);
       lastContactsHash = JSON.stringify(allContactsData);
     } catch (e) { }
@@ -73,19 +74,24 @@ async function fetchContacts() {
 
   try {
     const sb = await getSupabase();
-    const { data, error } = await sb
-      .from('contacts')
-      .select('full_name, phone_number, department_id')
-      .eq('active', true)
-      .order('full_name');
+    const [contactsRes, deptsRes] = await Promise.all([
+      sb.from('contacts').select('full_name, phone_number, department_id').eq('active', true).neq('department_id', 'ADMIN').order('full_name'),
+      sb.from('departments').select('id, name').eq('active', true).neq('id', 'ADMIN').order('created_at', { ascending: true })
+    ]);
 
-    if (error) throw error;
+    if (contactsRes.error) throw contactsRes.error;
+    if (deptsRes.error) throw deptsRes.error;
+
+    const data = contactsRes.data;
+    const orderedDepts = deptsRes.data.map(d => d.id);
 
     const freshHash = JSON.stringify(data);
     if (freshHash !== lastContactsHash) {
       allContactsData = data;
+      window._orderedDepts = orderedDepts;
       renderDepartments(data);
       localStorage.setItem('contacts_cache', freshHash);
+      localStorage.setItem('contacts_order_cache', JSON.stringify(orderedDepts));
       lastContactsHash = freshHash;
     }
   } catch (err) {
@@ -118,7 +124,10 @@ function renderDepartments(data, query = '') {
     grouped[dept].push(c);
   });
 
-  const depts = Object.keys(grouped).sort();
+  const depts = [...(window._orderedDepts || [])];
+  Object.keys(grouped).forEach(d => {
+    if (!depts.includes(d)) depts.push(d);
+  });
 
   let html = '';
   depts.forEach(dept => {

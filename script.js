@@ -138,6 +138,7 @@ async function loadDashboard() {
   if (cachedData) {
     try {
       const data = JSON.parse(cachedData);
+      window._orderedDepts = JSON.parse(localStorage.getItem('dept_order_cache') || '[]');
       renderDashboard(data, "📂 Supabase (Cached)");
       lastDataHash = JSON.stringify(data);
     } catch (e) {
@@ -151,21 +152,25 @@ async function loadDashboard() {
     const sb = await getSupabase();
     console.log("Fetching roster for:", dateStr);
 
-    const { data, error } = await sb
-      .from('view_roster_merged')
-      .select('*')
-      .eq('date', dateStr)
-      .order('department_created_at', { ascending: true })
-      .order('slot_order', { ascending: true });
+    const [rosterRes, deptsRes] = await Promise.all([
+      sb.from('view_roster_merged').select('*').eq('date', dateStr).neq('department_id', 'ADMIN').order('slot_order', { ascending: true }),
+      sb.from('departments').select('id').eq('active', true).neq('id', 'ADMIN').order('created_at', { ascending: true })
+    ]);
 
-    if (error) throw error;
+    if (rosterRes.error) throw rosterRes.error;
+    if (deptsRes.error) throw deptsRes.error;
 
-    console.log(`Received ${data.length} rows for ${dateStr}`);
+    const { data } = rosterRes;
+    const orderedDepts = deptsRes.data.map(d => d.id.toUpperCase());
+    window._orderedDepts = orderedDepts;
+
+    console.log(`Received ${rosterRes.data.length} rows for ${dateStr}`);
 
     const freshHash = JSON.stringify(data);
     if (freshHash !== lastDataHash) {
       renderDashboard(data, "📂 Supabase (Live)");
       localStorage.setItem(cacheKey, freshHash);
+      localStorage.setItem('dept_order_cache', JSON.stringify(orderedDepts));
       lastDataHash = freshHash;
     } else {
       const sourceEl = document.getElementById("data-source");
@@ -217,7 +222,7 @@ function renderDashboard(data, sourceLabel, query = '') {
 
   // Grouping: department_id -> slot_label -> doctors
   const grouped = {};
-  const deptsInOrder = [];
+  const deptsInOrder = [...(window._orderedDepts || [])];
 
   data.forEach(row => {
     const main = (row.department_id || 'OTHER').toUpperCase();
@@ -225,7 +230,7 @@ function renderDashboard(data, sourceLabel, query = '') {
 
     if (!grouped[main]) {
       grouped[main] = {};
-      deptsInOrder.push(main);
+      if (!deptsInOrder.includes(main)) deptsInOrder.push(main);
     }
     if (!grouped[main][sub]) grouped[main][sub] = [];
 
