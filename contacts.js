@@ -76,7 +76,7 @@ async function fetchContacts() {
     const sb = await getSupabase();
     const [contactsRes, deptsRes] = await Promise.all([
       sb.from('contacts').select('full_name, phone_number, department_id').eq('active', true).neq('department_id', 'ADMIN').order('full_name'),
-      sb.from('departments').select('id, name').eq('active', true).neq('id', 'ADMIN').order('created_at', { ascending: true })
+      sb.from('departments').select('id, name').eq('active', true).neq('id', 'ADMIN').order('order_index', { ascending: true })
     ]);
 
     if (contactsRes.error) throw contactsRes.error;
@@ -85,13 +85,15 @@ async function fetchContacts() {
     const data = contactsRes.data;
     const orderedDepts = deptsRes.data.map(d => d.id);
 
+    // Always update global order and cache
+    window._orderedDepts = orderedDepts;
+    localStorage.setItem('contacts_order_cache', JSON.stringify(orderedDepts));
+
     const freshHash = JSON.stringify(data);
     if (freshHash !== lastContactsHash) {
       allContactsData = data;
-      window._orderedDepts = orderedDepts;
       renderDepartments(data);
       localStorage.setItem('contacts_cache', freshHash);
-      localStorage.setItem('contacts_order_cache', JSON.stringify(orderedDepts));
       lastContactsHash = freshHash;
     }
   } catch (err) {
