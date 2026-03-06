@@ -154,7 +154,9 @@ async function loadDashboard() {
     const { data, error } = await sb
       .from('view_roster_merged')
       .select('*')
-      .eq('date', dateStr);
+      .eq('date', dateStr)
+      .order('department_created_at', { ascending: true })
+      .order('slot_order', { ascending: true });
 
     if (error) throw error;
 
@@ -237,7 +239,7 @@ function renderDashboard(data, sourceLabel, query = '') {
   });
 
   let html = '';
-  deptsInOrder.sort().forEach(mainDept => {
+  deptsInOrder.forEach(mainDept => {
     const subGroups = grouped[mainDept];
     let subHtml = '';
 
