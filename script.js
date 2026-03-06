@@ -165,7 +165,7 @@ async function loadDashboard() {
     const orderedDepts = deptsRes.data.map(d => d.id.toUpperCase());
     const deptNames = {};
     deptsRes.data.forEach(d => {
-      deptNames[d.id.toUpperCase()] = d.name.replace(/department/gi, '').trim();
+      deptNames[d.id.toUpperCase()] = d.name.replace(/department/gi, '').trim().toUpperCase();
     });
 
     // Always update global states and cache

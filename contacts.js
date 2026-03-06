@@ -87,7 +87,7 @@ async function fetchContacts() {
     const orderedDepts = deptsRes.data.map(d => d.id);
     const deptNames = {};
     deptsRes.data.forEach(d => {
-      deptNames[d.id] = d.name.replace(/department/gi, '').trim();
+      deptNames[d.id] = d.name.replace(/department/gi, '').trim().toUpperCase();
     });
 
     // Always update global order and cache
