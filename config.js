@@ -4,8 +4,8 @@
  */
 window.APP_CONFIG = {
     // Supabase Configuration
-    SUPABASE_URL: 'PLACEHOLDER_SUPABASE_URL',
-    SUPABASE_ANON_KEY: 'PLACEHOLDER_SUPABASE_ANON_KEY',
+    SUPABASE_URL: '',
+    SUPABASE_ANON_KEY: '',
 
     // UI Settings
     REFRESH_INTERVAL: 0
