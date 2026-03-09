@@ -2,6 +2,22 @@
 const API_KEY = window.APP_CONFIG?.DRIVE_API_KEY || "AIzaSyD31jjNmYQWOwOnkUHwJpucsU_HceUAJWw";
 const ROOT_FOLDER_ID = window.APP_CONFIG?.ROOT_FOLDER_ID || "19hxtBDM7U6IRepoEZiOHVG2MK_erNdrk";
 
+// Month sorting mapping (English & Malay)
+const MONTH_ORDER = {
+  "jan": 1, "january": 1, "januari": 1,
+  "feb": 2, "february": 2, "februari": 2,
+  "mar": 3, "march": 3, "mac": 3,
+  "apr": 4, "april": 4,
+  "may": 5, "mei": 5,
+  "jun": 6, "june": 6,
+  "jul": 7, "july": 7, "julai": 7,
+  "aug": 8, "august": 8, "ogos": 8,
+  "sep": 9, "september": 9,
+  "oct": 10, "october": 10, "oktober": 10,
+  "nov": 11, "november": 11,
+  "dec": 12, "december": 12, "disember": 12
+};
+
 // Elements
 const fileList = document.getElementById("file-list");
 const loaderWrapper = document.getElementById("file-loader");
@@ -145,6 +161,56 @@ async function listFiles(folderId) {
 
     const files = response.result.files || [];
     console.log(`✅ Received ${files.length} fresh files`);
+
+    // --- Custom Sorting Logic ---
+    const currentFolderName = folderStack[folderStack.length - 1]?.name || "";
+    const isYearFolder = /^\d{4}$/.test(currentFolderName);
+
+    files.sort((a, b) => {
+      const isFolderA = a.mimeType === "application/vnd.google-apps.folder";
+      const isFolderB = b.mimeType === "application/vnd.google-apps.folder";
+
+      // 1. Folders first
+      if (isFolderA && !isFolderB) return -1;
+      if (!isFolderA && isFolderB) return 1;
+
+      // 2. Month-based sorting
+      const getMonthPriority = (name) => {
+        const lower = name.toLowerCase().trim();
+        // Check for common month prefixes
+        for (const [m, p] of Object.entries(MONTH_ORDER)) {
+          if (lower.startsWith(m)) return p;
+        }
+        return null;
+      };
+
+      const pA = getMonthPriority(a.name);
+      const pB = getMonthPriority(b.name);
+
+      if (pA !== null && pB !== null) {
+        if (pA !== pB) return pA - pB; // Chronological (Jan-Dec)
+      } else if (pA !== null) {
+        return -1; // Month folder before other folder/file
+      } else if (pB !== null) {
+        return 1;
+      }
+
+      // 3. Year-based sorting (Descending - 2026 before 2025)
+      const isYearA = /^\d{4}$/.test(a.name);
+      const isYearB = /^\d{4}$/.test(b.name);
+      if (isYearA && isYearB) {
+        return b.name.localeCompare(a.name);
+      }
+
+      // 4. Fallback sorting
+      if (isYearFolder) {
+        // Inside a year folder (like 2026), prefer ascending alphabetic for other items
+        return a.name.localeCompare(b.name);
+      }
+
+      // Maintain original "name desc" behavior for general content
+      return b.name.localeCompare(a.name);
+    });
 
     // 💾 3. Update cache with fresh data
     setFilesToCache(folderId, files);
