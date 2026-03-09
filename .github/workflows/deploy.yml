@@ -18,8 +18,9 @@ jobs:
       - name: Create Production Config
         run: |
           cp config.example.js config.js
-          sed -i "s/PLACEHOLDER_DRIVE_API_KEY/${{ secrets.DRIVE_API_KEY }}/g" config.js
-          echo "✅ Production config.js created with secret injected."
+          sed -i "s|PLACEHOLDER_SUPABASE_URL|${{ secrets.SUPABASE_URL }}|g" config.js
+          sed -i "s|PLACEHOLDER_SUPABASE_ANON_KEY|${{ secrets.SUPABASE_ANON_KEY }}|g" config.js
+          echo "✅ Production config.js created with Supabase secrets injected."
 
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
