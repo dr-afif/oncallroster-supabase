@@ -61,7 +61,11 @@ function showError(msg) {
 }
 
 async function fetchContacts() {
-  // 1. Try Cache
+  // 1. Determine target month (YYYY-MM)
+  const today = new Date();
+  const targetMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+
+  // 2. Try Cache
   const cached = localStorage.getItem('contacts_cache');
   if (cached) {
     try {
@@ -75,15 +79,41 @@ async function fetchContacts() {
 
   try {
     const sb = await getSupabase();
+
+    // 2. Fetch Roster Month ID for target month
+    const { data: rmData } = await sb.from('roster_months').select('id').eq('month', targetMonth);
+    const rmIds = (rmData || []).map(rm => rm.id);
+
+    // 3. Fetch Roster Cells for the month
+    let activeNames = new Set();
+    if (rmIds.length > 0) {
+      const { data: cells } = await sb.from('roster_cells')
+        .select('raw_text, contacts(short_name)')
+        .in('roster_month_id', rmIds);
+
+      if (cells) {
+        cells.forEach(c => {
+          if (c.contacts?.short_name) activeNames.add(c.contacts.short_name.toLowerCase());
+          if (c.raw_text) activeNames.add(c.raw_text.toLowerCase());
+        });
+      }
+    }
+
     const [contactsRes, deptsRes] = await Promise.all([
-      sb.from('contacts').select('full_name, phone_number, department_id').eq('active', true).neq('department_id', 'ADMIN').order('full_name'),
+      sb.from('contacts').select('full_name, phone_number, department_id, short_name').eq('active', true).neq('department_id', 'ADMIN').order('full_name'),
       sb.from('departments').select('id, name').eq('active', true).neq('id', 'ADMIN').order('order_index', { ascending: true })
     ]);
 
     if (contactsRes.error) throw contactsRes.error;
     if (deptsRes.error) throw deptsRes.error;
 
-    const data = contactsRes.data;
+    // 4. Filter contacts based on roster
+    const rawData = contactsRes.data;
+    const filteredData = rawData.filter(c => {
+      const name = (c.short_name || '').toLowerCase();
+      return activeNames.has(name);
+    });
+
     const orderedDepts = deptsRes.data.map(d => d.id);
     const deptNames = {};
     deptsRes.data.forEach(d => {
@@ -96,10 +126,10 @@ async function fetchContacts() {
     localStorage.setItem('contacts_order_cache', JSON.stringify(orderedDepts));
     localStorage.setItem('contacts_names_cache', JSON.stringify(deptNames));
 
-    const freshHash = JSON.stringify(data);
+    const freshHash = JSON.stringify(filteredData);
     if (freshHash !== lastContactsHash) {
-      allContactsData = data;
-      renderDepartments(data);
+      allContactsData = filteredData;
+      renderDepartments(filteredData);
       localStorage.setItem('contacts_cache', freshHash);
       lastContactsHash = freshHash;
     }
