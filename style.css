@@ -136,3 +136,12 @@
   color: var(--primary);
   margin-top: 4px;
 }
+
+/* Search Highlighting */
+.highlight {
+  background-color: #fef08a; /* Soft yellow */
+  color: #1f2937; /* Dark text to ensure contrast */
+  padding: 0 2px;
+  border-radius: 2px;
+  font-weight: 500;
+}
