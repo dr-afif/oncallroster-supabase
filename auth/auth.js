@@ -68,6 +68,20 @@
     return session;
   }
 
+  async function populateUserInfo() {
+    try {
+      const user = await getUser();
+      if (user && user.email) {
+        document.querySelectorAll('.user-profile-email').forEach(el => {
+          el.textContent = user.email;
+          el.title = "Logged in as " + user.email;
+        });
+      }
+    } catch (e) {
+      console.warn("Failed to populate user info:", e);
+    }
+  }
+
   // Expose API
   window.Auth = {
     initAuth,
@@ -76,5 +90,6 @@
     isAuthenticated,
     getUser,
     handleRedirectIfNeeded,
+    populateUserInfo,
   };
 })();
