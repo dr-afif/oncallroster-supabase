@@ -203,7 +203,21 @@ async function loadDashboard() {
 
     if (data.length === 0) {
       const container = document.getElementById("doctor-list");
-      if (container) container.innerHTML = `<p class="p-8 text-center text-muted">No roster found for ${dateStr}.</p>`;
+      if (container) {
+        container.innerHTML = `
+          <div class="empty-state" style="padding: 3rem 1rem; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 1.5rem; opacity: 0.4; color: var(--text-muted);">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+            <h3 style="margin-bottom: 0.5rem; color: var(--text-main); font-weight: 500; font-size: 1.2rem;">No Roster Available</h3>
+            <p style="margin-bottom: 1.5rem; color: var(--text-muted); text-align: center; max-width: 80%;">We couldn't find any roster data for ${dateStr}.</p>
+            <button onclick="lastDataHash=''; showSkeleton(); loadDashboard();" style="background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border); padding: 0.6rem 1.2rem; border-radius: 8px; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; transition: background 0.2s;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+              Refresh Data
+            </button>
+          </div>
+        `;
+      }
     }
 
     const updatedEl = document.getElementById("last-updated");
