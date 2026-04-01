@@ -22,26 +22,23 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
-          # Sanitize
+          # Sanitize secrets (remove stray whitespace/newlines)
           CLEAN_URL=$(echo "$SUPABASE_URL" | tr -d '\r\n[:space:]')
           CLEAN_KEY=$(echo "$SUPABASE_ANON_KEY" | tr -d '\r\n[:space:]')
-          
-          # 1. Create config.js directly from the environment variables
-          # This overwrites the one in the repo for the production build
-          cat <<EOF > config.js
-          window.APP_CONFIG = {
-              SUPABASE_URL: '$CLEAN_URL',
-              SUPABASE_ANON_KEY: '$CLEAN_KEY',
-              REFRESH_INTERVAL: 0
-          };
-          EOF
-          echo "✅ Production config.js created safely from GitHub Secrets."
-          
-          # Optional: Verify the file was created and isn't empty
+
+          # Create config.js using printf (heredocs break in YAML due to indentation)
+          printf 'window.APP_CONFIG = {\n  SUPABASE_URL: "%s",\n  SUPABASE_ANON_KEY: "%s",\n  REFRESH_INTERVAL: 0\n};\n' "$CLEAN_URL" "$CLEAN_KEY" > config.js
+
+          echo "--- config.js content ---"
+          cat config.js
+          echo "-------------------------"
+
+          # Verify the file was created and isn't empty
           if [ ! -s config.js ]; then
             echo "❌ ERROR: config.js is empty or was not created."
             exit 1
           fi
+          echo "✅ config.js created successfully."
 
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
