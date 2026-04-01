@@ -28,10 +28,19 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
-          cp config.example.js config.js
-          sed -i "s|PLACEHOLDER_SUPABASE_URL|$SUPABASE_URL|g" config.js
-          sed -i "s|PLACEHOLDER_SUPABASE_ANON_KEY|$SUPABASE_ANON_KEY|g" config.js
-          echo "✅ Production config.js created with Supabase secrets injected."
+          # Sanitize secrets by removing potential trailing newlines/spaces
+          CLEAN_URL=$(echo "$SUPABASE_URL" | tr -d '\r\n[:space:]')
+          CLEAN_KEY=$(echo "$SUPABASE_ANON_KEY" | tr -d '\r\n[:space:]')
+          
+          # Create config.js directly to avoid sed delimiter issues
+          cat <<EOF > config.js
+          window.APP_CONFIG = {
+              SUPABASE_URL: '$CLEAN_URL',
+              SUPABASE_ANON_KEY: '$CLEAN_KEY',
+              REFRESH_INTERVAL: 0
+          };
+          EOF
+          echo "✅ Production config.js created safely."
 
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
