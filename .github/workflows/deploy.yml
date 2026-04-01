@@ -32,10 +32,10 @@ jobs:
           CLEAN_URL=$(echo "$SUPABASE_URL" | tr -d '\r\n[:space:]')
           CLEAN_KEY=$(echo "$SUPABASE_ANON_KEY" | tr -d '\r\n[:space:]')
           
-          # Inject into all HTML files
+          # Inject into all HTML files using perl for better compatibility
           echo "Injecting secrets into HTML files..."
-          find . -name "*.html" -type f -exec sed -i "s|PLACEHOLDER_SUPABASE_URL|$CLEAN_URL|g" {} +
-          find . -name "*.html" -type f -exec sed -i "s|PLACEHOLDER_SUPABASE_ANON_KEY|$CLEAN_KEY|g" {} +
+          find . -name "*.html" -type f -exec perl -pi -e "s/PLACEHOLDER_SUPABASE_URL/$CLEAN_URL/g" {} +
+          find . -name "*.html" -type f -exec perl -pi -e "s/PLACEHOLDER_SUPABASE_ANON_KEY/$CLEAN_KEY/g" {} +
           echo "✅ Selection of secrets injected into HTML files."
 
       - name: Deploy to GitHub Pages
