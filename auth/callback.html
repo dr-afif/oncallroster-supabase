@@ -8,8 +8,9 @@
 <body>
   <p>Completing sign-in…</p>
 
-  <script src="./auth/auth-config.js"></script>
-  <script src="./auth/auth.js"></script>
+  <script src="../config.js"></script>
+  <script src="auth-config.js"></script>
+  <script src="auth.js"></script>
   <script>
     (async () => {
       try {
@@ -17,7 +18,7 @@
       } catch (e) {
         console.error('Auth0 callback error:', e);
       } finally {
-        const next = sessionStorage.getItem('post_login_redirect') || window.__AUTH0_CONFIG__.postLoginRedirect || './index.html';
+        const next = sessionStorage.getItem('post_login_redirect') || (window.__AUTH0_CONFIG__ && window.__AUTH0_CONFIG__.postLoginRedirect) || '../index.html';
         sessionStorage.removeItem('post_login_redirect');
         location.replace(next);
       }

@@ -15,11 +15,22 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Verify Secrets
+        run: |
+          if [ -z "${{ secrets.SUPABASE_URL }}" ] || [ -z "${{ secrets.SUPABASE_ANON_KEY }}" ]; then
+            echo "❌ ERROR: SUPABASE_URL or SUPABASE_ANON_KEY is missing in GitHub Secrets."
+            echo "Please add them in Settings > Secrets and variables > Actions"
+            exit 1
+          fi
+
       - name: Create Production Config
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
           cp config.example.js config.js
-          sed -i "s|PLACEHOLDER_SUPABASE_URL|${{ secrets.SUPABASE_URL }}|g" config.js
-          sed -i "s|PLACEHOLDER_SUPABASE_ANON_KEY|${{ secrets.SUPABASE_ANON_KEY }}|g" config.js
+          sed -i "s|PLACEHOLDER_SUPABASE_URL|$SUPABASE_URL|g" config.js
+          sed -i "s|PLACEHOLDER_SUPABASE_ANON_KEY|$SUPABASE_ANON_KEY|g" config.js
           echo "✅ Production config.js created with Supabase secrets injected."
 
       - name: Deploy to GitHub Pages
