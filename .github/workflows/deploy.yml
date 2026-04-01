@@ -40,12 +40,21 @@ jobs:
           fi
           echo "✅ config.js created successfully."
 
-      - name: Include config.js in deployment
+      - name: Prepare for GitHub Pages
         run: |
-          # config.js is in .gitignore (to protect local secrets)
-          # We must remove it from .gitignore so the deploy action includes it
+          # Create .nojekyll to bypass Jekyll processing
+          touch .nojekyll
+          
+          # config.js is in .gitignore (to protect local secrets from commits)
+          # We must remove it so the deploy action includes the generated config.js
           sed -i '/^config\.js$/d' .gitignore
-          echo "✅ Removed config.js from .gitignore for deployment."
+          
+          # Also remove .gitignore from the deployment entirely
+          # GitHub Pages respects .gitignore on the gh-pages branch and will
+          # refuse to serve any files matching its patterns
+          rm -f .gitignore
+          
+          echo "✅ Prepared deployment: .nojekyll created, .gitignore removed."
 
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
