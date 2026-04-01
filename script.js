@@ -14,7 +14,7 @@ async function getSupabase() {
     const platform = window.location.hostname.includes('github.io') ? 'GitHub Secrets' : 'Cloudflare Environment Variables';
     const detectedUrl = url ? `${url.substring(0, 8)}...` : 'undefined';
     const detectedKey = key ? `${key.substring(0, 8)}...` : 'undefined';
-    throw new Error(`Supabase configuration is missing. Platform: ${platform}, URL: ${detectedUrl}, Key: ${detectedKey}. Please ensure secrets are set correctly and the project is redeployed. (Force-Refresh with v2.0.2)`);
+    throw new Error(`Supabase configuration is missing. Platform: ${platform}, URL: ${detectedUrl}, Key: ${detectedKey}. Please ensure secrets are set correctly and the project is redeployed. (Force-Refresh with v2.0.3)`);
   }
 
   // Ensure @supabase/supabase-js is loaded
