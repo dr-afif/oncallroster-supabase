@@ -26,33 +26,28 @@ jobs:
           CLEAN_URL=$(echo "$SUPABASE_URL" | tr -d '\r\n[:space:]')
           CLEAN_KEY=$(echo "$SUPABASE_ANON_KEY" | tr -d '\r\n[:space:]')
 
-          # Create config.js using printf (heredocs break in YAML due to indentation)
-          printf 'window.APP_CONFIG = {\n  SUPABASE_URL: "%s",\n  SUPABASE_ANON_KEY: "%s",\n  REFRESH_INTERVAL: 0\n};\n' "$CLEAN_URL" "$CLEAN_KEY" > config.js
+          # Create app-config.js using printf (heredocs break in YAML due to indentation)
+          printf 'window.APP_CONFIG = {\n  SUPABASE_URL: "%s",\n  SUPABASE_ANON_KEY: "%s",\n  REFRESH_INTERVAL: 0\n};\n' "$CLEAN_URL" "$CLEAN_KEY" > app-config.js
 
-          echo "--- config.js content ---"
-          cat config.js
-          echo "-------------------------"
+          echo "--- app-config.js content ---"
+          cat app-config.js
+          echo "-----------------------------"
 
           # Verify the file was created and isn't empty
-          if [ ! -s config.js ]; then
-            echo "❌ ERROR: config.js is empty or was not created."
+          if [ ! -s app-config.js ]; then
+            echo "❌ ERROR: app-config.js is empty or was not created."
             exit 1
           fi
-          echo "✅ config.js created successfully."
+          echo "✅ app-config.js created successfully."
 
       - name: Prepare for GitHub Pages
         run: |
           # Create .nojekyll to bypass Jekyll processing
           touch .nojekyll
           
-          # config.js is in .gitignore (to protect local secrets from commits)
-          # We must remove it so the deploy action includes the generated config.js
-          sed -i '/^config\.js$/d' .gitignore
-          
-          # Also remove .gitignore from the deployment entirely
-          # GitHub Pages respects .gitignore on the gh-pages branch and will
-          # refuse to serve any files matching its patterns
-          rm -f .gitignore
+          # app-config.js is in .gitignore (to protect local secrets from commits)
+          # Remove it so the deploy action includes the generated app-config.js
+          sed -i '/^app-config\.js$/d' .gitignore
           
           echo "✅ Prepared deployment: .nojekyll created, .gitignore removed."
 
