@@ -23,24 +23,20 @@ jobs:
             exit 1
           fi
 
-      - name: Create Production Config
+      - name: Inject Config into HTML
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
-          # Sanitize secrets by removing potential trailing newlines/spaces
+          # Sanitize secrets
           CLEAN_URL=$(echo "$SUPABASE_URL" | tr -d '\r\n[:space:]')
           CLEAN_KEY=$(echo "$SUPABASE_ANON_KEY" | tr -d '\r\n[:space:]')
           
-          # Create config.js directly to avoid sed delimiter issues
-          cat <<EOF > config.js
-          window.APP_CONFIG = {
-              SUPABASE_URL: '$CLEAN_URL',
-              SUPABASE_ANON_KEY: '$CLEAN_KEY',
-              REFRESH_INTERVAL: 0
-          };
-          EOF
-          echo "✅ Production config.js created safely."
+          # Inject into all HTML files
+          echo "Injecting secrets into HTML files..."
+          find . -name "*.html" -type f -exec sed -i "s|PLACEHOLDER_SUPABASE_URL|$CLEAN_URL|g" {} +
+          find . -name "*.html" -type f -exec sed -i "s|PLACEHOLDER_SUPABASE_ANON_KEY|$CLEAN_KEY|g" {} +
+          echo "✅ Selection of secrets injected into HTML files."
 
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
