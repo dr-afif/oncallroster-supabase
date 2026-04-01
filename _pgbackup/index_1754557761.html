@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>HSAAS On-Call Doctor Dashboard</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#1976d2">
+  <link rel="icon" href="data:,">
+</head>
+<body>
+  <h1 id="header-title">
+    <img src="icons/logo.png" alt="Logo" id="logo">
+    <div class="header-text">
+      HSAAS <br> On-Call Doctors <br> Today
+    </div>
+  </h1>
+  <div id="header-date"></div>
+  <div id="doctor-list">Loading...</div>
+  <div id="last-updated"></div>
+  <script src="script.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('./service-worker.js')
+          .then(function (registration) {
+            console.log('ServiceWorker registered with scope:', registration.scope);
+          }, function (err) {
+            console.log('ServiceWorker registration failed:', err);
+          });
+      });
+    }
+  </script>
+  <footer id="last-updated" style="text-align: center; margin-top: 1em; font-size: 0.9em;"></footer>
+  <footer id="copyright" style="text-align: center; margin-top: 0.5em; font-size: 0.8em;">
+    &copy; Muhammad Afif Abdullah 2025
+  </footer>
+</body>
+</html>
