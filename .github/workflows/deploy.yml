@@ -1,59 +1,63 @@
 name: Deploy to GitHub Pages
 
 on:
+  # Runs on pushes targeting the default branch
   push:
-    branches:
-      - main
+    branches: ["main"]
+  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
 jobs:
+  # Single deploy job since we're just deploying static files
   deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Create Production Config
+      
+      - name: Create Production app-config.js
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
-          # Sanitize secrets (remove stray whitespace/newlines)
+          # Sanitize secrets
           CLEAN_URL=$(echo "$SUPABASE_URL" | tr -d '\r\n[:space:]')
           CLEAN_KEY=$(echo "$SUPABASE_ANON_KEY" | tr -d '\r\n[:space:]')
 
-          # Create app-config.js using printf (heredocs break in YAML due to indentation)
+          # Create app-config.js using printf
           printf 'window.APP_CONFIG = {\n  SUPABASE_URL: "%s",\n  SUPABASE_ANON_KEY: "%s",\n  REFRESH_INTERVAL: 0\n};\n' "$CLEAN_URL" "$CLEAN_KEY" > app-config.js
-
-          echo "--- app-config.js content ---"
-          cat app-config.js
-          echo "-----------------------------"
-
-          # Verify the file was created and isn't empty
+          
           if [ ! -s app-config.js ]; then
             echo "❌ ERROR: app-config.js is empty or was not created."
             exit 1
           fi
-          echo "✅ app-config.js created successfully."
+          echo "✅ app-config.js created successfully with secrets."
 
-      - name: Prepare for GitHub Pages
-        run: |
-          # Create .nojekyll to bypass Jekyll processing
-          touch .nojekyll
-          
-          # app-config.js is in .gitignore (to protect local secrets from commits)
-          # Remove it so the deploy action includes the generated app-config.js
-          sed -i '/^app-config\.js$/d' .gitignore
-          
-          echo "✅ Prepared deployment: .nojekyll created, .gitignore removed."
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          # Upload entire repository
+          path: '.'
 
       - name: Deploy to GitHub Pages
-        uses: JamesIves/github-pages-deploy-action@v4
-        with:
-          folder: . # The folder the action should deploy.
-          branch: gh-pages # The branch the action should deploy to.
-          clean: true
+        id: deployment
+        uses: actions/deploy-pages@v4
