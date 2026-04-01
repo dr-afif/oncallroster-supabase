@@ -40,6 +40,13 @@ jobs:
           fi
           echo "✅ config.js created successfully."
 
+      - name: Include config.js in deployment
+        run: |
+          # config.js is in .gitignore (to protect local secrets)
+          # We must remove it from .gitignore so the deploy action includes it
+          sed -i '/^config\.js$/d' .gitignore
+          echo "✅ Removed config.js from .gitignore for deployment."
+
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
         with:
