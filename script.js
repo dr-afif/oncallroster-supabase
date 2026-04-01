@@ -12,7 +12,9 @@ async function getSupabase() {
 
   if (!url || !key || url.includes('PLACEHOLDER')) {
     const platform = window.location.hostname.includes('github.io') ? 'GitHub Secrets' : 'Cloudflare Environment Variables';
-    throw new Error(`Supabase configuration is missing. Please ensure ${platform} are set correctly and the project is redeployed. (Note: If you just updated them, try clearing your browser cache or wait a few minutes)`);
+    const detectedUrl = url ? `${url.substring(0, 8)}...` : 'undefined';
+    const detectedKey = key ? `${key.substring(0, 8)}...` : 'undefined';
+    throw new Error(`Supabase configuration is missing. Platform: ${platform}, URL: ${detectedUrl}, Key: ${detectedKey}. Please ensure secrets are set correctly and the project is redeployed. (Force-Refresh with v2.0.2)`);
   }
 
   // Ensure @supabase/supabase-js is loaded
