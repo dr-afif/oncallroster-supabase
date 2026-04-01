@@ -11,7 +11,8 @@ async function getSupabase() {
   const key = window.APP_CONFIG?.SUPABASE_ANON_KEY;
 
   if (!url || !key || url.includes('PLACEHOLDER')) {
-    throw new Error("Supabase configuration is missing. Ensure Cloudflare environment variables (SUPABASE_URL and SUPABASE_ANON_KEY) are set and the project is redeployed.");
+    const platform = window.location.hostname.includes('github.io') ? 'GitHub Secrets' : 'Cloudflare Environment Variables';
+    throw new Error(`Supabase configuration is missing. Please ensure ${platform} are set correctly and the project is redeployed. (Note: If you just updated them, try clearing your browser cache or wait a few minutes)`);
   }
 
   // Ensure @supabase/supabase-js is loaded

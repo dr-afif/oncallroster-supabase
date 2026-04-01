@@ -1,4 +1,4 @@
-const CACHE_NAME = "roster-cache-v14"; // Bumped for logo resizing
+const CACHE_NAME = "roster-cache-v15"; // Bumped to force config.js refresh
 const urlsToCache = [
   "./",
   "./config.js",
