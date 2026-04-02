@@ -132,7 +132,14 @@ async function initializeGapiClient() {
   } catch (err) {
     console.error("GAPI Init Error:", err);
     hideLoader();
-    fileList.textContent = "Failed to connect to Google Drive.";
+    let errMsg = err.message || JSON.stringify(err) || "Unknown error";
+    // If it's an object with error property
+    if (err.error && err.error.message) {
+      errMsg = err.error.message;
+    } else if (err.details) {
+      errMsg = err.details;
+    }
+    fileList.textContent = "Failed to connect to Google Drive. Error: " + errMsg;
   }
 }
 
