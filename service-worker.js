@@ -54,24 +54,7 @@ self.addEventListener("fetch", (event) => {
 
   const url = new URL(request.url);
 
-  // Strategy: Roster Data -> network-first (ensure offline availability)
-  // We detect snapshot.json by the file name so it works on GitHub or Internal servers
-  if (url.pathname.endsWith('/snapshot.json')) {
-    event.respondWith(
-      fetch(request)
-        .then((networkResponse) => {
-          if (networkResponse && networkResponse.ok) {
-            const copy = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
-          }
-          return networkResponse;
-        })
-        .catch(() => caches.match(request))
-    );
-    return;
-  }
-
-  // Bypass cross-origin (except the snapshot)
+  // Bypass cross-origin restrictions
   if (url.origin !== self.location.origin) return;
 
   // Bypass auth-related routes
