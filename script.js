@@ -397,7 +397,7 @@ async function shareCardAsImage(cardId, deptName) {
     const file = new File([blob], fileName, { type: 'image/png' });
 
     // Extract rich text from the card DOM for the sharing text
-    let shareText = `*${deptName} Roster* (${dateStr})\n`;
+    let shareText = `*${deptName} Roster*\n${dateStr}\n`;
     if (card) {
       Array.from(card.children).forEach(child => {
         if (child.tagName === 'H3') {
