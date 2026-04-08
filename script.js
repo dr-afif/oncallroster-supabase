@@ -396,11 +396,32 @@ async function shareCardAsImage(cardId, deptName) {
     const fileName = `HSAAS_Roster_${deptName}_${dateStr.replace(/[/\\?%*:|"<>]/g, '-')}.png`;
     const file = new File([blob], fileName, { type: 'image/png' });
 
+    // Extract rich text from the card DOM for the sharing text
+    let shareText = `*${deptName} Roster* (${dateStr})\n`;
+    if (card) {
+      Array.from(card.children).forEach(child => {
+        if (child.tagName === 'H3') {
+          shareText += `\n*${child.textContent.trim()}*\n`;
+        } else if (child.classList.contains('doctor-row')) {
+          const nameInfo = child.querySelector('strong')?.textContent.trim() || '';
+          const phoneInfo = child.querySelector('span')?.textContent.trim() || '';
+          let rowText = `${nameInfo} - ${phoneInfo}`;
+          if (phoneInfo && phoneInfo !== '-' && !phoneInfo.toLowerCase().includes('no phone')) {
+            const numsOnly = phoneInfo.replace(/\D/g, '');
+            if (numsOnly) {
+              rowText += ` (wa.me/6${numsOnly})`;
+            }
+          }
+          shareText += `${rowText}\n`;
+        }
+      });
+    }
+
     if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
       await navigator.share({
         files: [file],
         title: `${deptName} Roster`,
-        text: `On-Call Roster for ${deptName} (${dateStr})`
+        text: shareText
       });
     } else {
       const link = document.createElement('a');
