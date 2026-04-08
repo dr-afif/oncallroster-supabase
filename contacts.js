@@ -80,39 +80,15 @@ async function fetchContacts() {
   try {
     const sb = await getSupabase();
 
-    // 2. Fetch Roster Month ID for target month
-    const { data: rmData } = await sb.from('roster_months').select('id').eq('month', targetMonth);
-    const rmIds = (rmData || []).map(rm => rm.id);
-
-    // 3. Fetch Roster Cells for the month
-    let activeNames = new Set();
-    if (rmIds.length > 0) {
-      const { data: cells } = await sb.from('roster_cells')
-        .select('raw_text, contacts(short_name)')
-        .in('roster_month_id', rmIds);
-
-      if (cells) {
-        cells.forEach(c => {
-          if (c.contacts?.short_name) activeNames.add(c.contacts.short_name.toLowerCase());
-          if (c.raw_text) activeNames.add(c.raw_text.toLowerCase());
-        });
-      }
-    }
-
     const [contactsRes, deptsRes] = await Promise.all([
-      sb.from('contacts').select('full_name, phone_number, department_id, short_name').eq('active', true).neq('department_id', 'ADMIN').order('full_name'),
+      sb.from('contacts').select('full_name, phone_number, department_id, short_name').eq('active', true).neq('department_id', 'ADMIN').order('short_name'),
       sb.from('departments').select('id, name').eq('active', true).neq('id', 'ADMIN').order('order_index', { ascending: true })
     ]);
 
     if (contactsRes.error) throw contactsRes.error;
     if (deptsRes.error) throw deptsRes.error;
 
-    // 4. Filter contacts based on roster
-    const rawData = contactsRes.data;
-    const filteredData = rawData.filter(c => {
-      const name = (c.short_name || '').toLowerCase();
-      return activeNames.has(name);
-    });
+    const filteredData = contactsRes.data;
 
     const orderedDepts = deptsRes.data.map(d => d.id);
     const deptNames = {};
@@ -173,12 +149,13 @@ function renderDepartments(data, query = '') {
     const doctors = grouped[dept];
     if (!doctors) return;
     const displayName = (window._deptNames && window._deptNames[dept]) || dept;
-    const filtered = doctors.filter(d =>
-      dept.toLowerCase().includes(query) ||
-      displayName.toLowerCase().includes(query) ||
-      d.full_name.toLowerCase().includes(query) ||
-      d.phone_number.includes(query)
-    );
+    const filtered = doctors.filter(d => {
+      const nameMatch = (d.short_name || d.full_name || '').toLowerCase().includes(query);
+      return dept.toLowerCase().includes(query) ||
+             displayName.toLowerCase().includes(query) ||
+             nameMatch ||
+             (d.phone_number || '').includes(query);
+    });
 
     if (filtered.length > 0) {
       html += `
@@ -188,7 +165,7 @@ function renderDepartments(data, query = '') {
                         <svg class="arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
                     </h2>
                     <div class="contacts-grid ${query ? '' : 'hidden'}">
-                        ${filtered.map(d => renderContactRow(d.full_name, d.phone_number, dept)).join('')}
+                        ${filtered.map(d => renderContactRow(d.short_name || d.full_name, d.phone_number, dept)).join('')}
                     </div>
                 </div>
             `;
