@@ -320,10 +320,8 @@ function updateBreadcrumb() {
 
 function openViewer(file) {
   modal.classList.remove("hidden");
-  if (file.mimeType === "application/pdf") {
+  if (file.mimeType === "application/pdf" || file.mimeType.startsWith("image/")) {
     viewer.src = `https://drive.google.com/file/d/${file.id}/preview`;
-  } else if (file.mimeType.startsWith("image/")) {
-    viewer.src = `https://drive.google.com/uc?id=${file.id}`;
   } else {
     viewer.src = file.webViewLink;
   }
