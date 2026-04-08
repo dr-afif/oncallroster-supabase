@@ -405,14 +405,7 @@ async function shareCardAsImage(cardId, deptName) {
         } else if (child.classList.contains('doctor-row')) {
           const nameInfo = child.querySelector('strong')?.textContent.trim() || '';
           const phoneInfo = child.querySelector('span')?.textContent.trim() || '';
-          let rowText = `${nameInfo} - ${phoneInfo}`;
-          if (phoneInfo && phoneInfo !== '-' && !phoneInfo.toLowerCase().includes('no phone')) {
-            const numsOnly = phoneInfo.replace(/\D/g, '');
-            if (numsOnly) {
-              rowText += ` (wa.me/6${numsOnly})`;
-            }
-          }
-          shareText += `${rowText}\n`;
+          shareText += `${nameInfo} - ${phoneInfo}\n`;
         }
       });
     }
