@@ -1,7 +1,12 @@
 /* Swipe & Transition Handler - HSAAS Premium */
 (function () {
     let startX = 0;
-    let isDragging = false;
+    let startY = 0;
+    let lockDirection = null; // 'horizontal' | 'vertical' | null
+
+    const SWIPE_THRESHOLD = 80;       // minimum px horizontal to trigger swipe
+    const DIRECTION_LOCK_THRESHOLD = 8; // px moved before we decide scroll vs swipe
+    const H_TO_V_RATIO = 1.5;         // horizontal must be 1.5x the vertical to count
 
     const pages = ['fileviewer.html', 'index.html', 'contacts.html'];
     const currentPath = window.location.pathname.toLowerCase();
@@ -11,16 +16,41 @@
     else if (currentPath.includes('contacts')) currentIndex = 2;
     else if (currentPath.includes('index') || currentPath === '/' || currentPath === '') currentIndex = 1;
 
-    function handleEnd(endX) {
+    // -- Touch Events --
+    document.addEventListener('touchstart', e => {
+        startX = e.touches[0].clientX;
+        startY = e.touches[0].clientY;
+        lockDirection = null;
+    }, { passive: true });
+
+    document.addEventListener('touchmove', e => {
+        if (lockDirection) return; // already decided
+        const dx = Math.abs(e.touches[0].clientX - startX);
+        const dy = Math.abs(e.touches[0].clientY - startY);
+        if (dx < DIRECTION_LOCK_THRESHOLD && dy < DIRECTION_LOCK_THRESHOLD) return;
+        // Lock the direction based on which axis moved more
+        lockDirection = dx > dy ? 'horizontal' : 'vertical';
+    }, { passive: true });
+
+    document.addEventListener('touchend', e => {
+        // Only act on intentional horizontal swipes
+        if (lockDirection !== 'horizontal') return;
+
+        const endX = e.changedTouches[0].clientX;
+        const endY = e.changedTouches[0].clientY;
         const dx = endX - startX;
-        if (Math.abs(dx) > 100) { // Threshold for swipe
-            if (dx < 0 && currentIndex < pages.length - 1) {
-                navigate(pages[currentIndex + 1], 'next');
-            } else if (dx > 0 && currentIndex > 0) {
-                navigate(pages[currentIndex - 1], 'prev');
-            }
+        const dy = endY - startY;
+
+        // Extra safety: horizontal must dominate over vertical
+        if (Math.abs(dx) < SWIPE_THRESHOLD) return;
+        if (Math.abs(dx) < Math.abs(dy) * H_TO_V_RATIO) return;
+
+        if (dx < 0 && currentIndex < pages.length - 1) {
+            navigate(pages[currentIndex + 1], 'next');
+        } else if (dx > 0 && currentIndex > 0) {
+            navigate(pages[currentIndex - 1], 'prev');
         }
-    }
+    }, { passive: true });
 
     function navigate(url, direction) {
         const wrapper = document.getElementById('page-wrapper');
@@ -30,22 +60,6 @@
         if (window.navigator?.vibrate) window.navigator.vibrate(10);
         setTimeout(() => { window.location.href = url; }, 250);
     }
-
-    // Touch Events
-    document.addEventListener('touchstart', e => { startX = e.touches[0].clientX; }, { passive: true });
-    document.addEventListener('touchend', e => { handleEnd(e.changedTouches[0].clientX); }, { passive: true });
-
-    // Mouse Events (Desktop Drag Support)
-    document.addEventListener('mousedown', e => {
-        startX = e.clientX;
-        isDragging = true;
-    });
-    document.addEventListener('mouseup', e => {
-        if (isDragging) {
-            handleEnd(e.clientX);
-            isDragging = false;
-        }
-    });
 
     // Handle slide-in on load
     window.addEventListener('DOMContentLoaded', () => {

@@ -1,13 +1,18 @@
-const CACHE_NAME = "roster-cache-v15"; // Bumped to force config.js refresh
+const CACHE_NAME = "roster-cache-v16"; // Bumped to kill stale Auth0-era service worker
 const urlsToCache = [
   "./",
-  "./config.js",
+  "./app-config.js",
   "./hsaas-logo.png",
   "./index.html",
   "./contacts.html",
+  "./fileviewer.html",
   "./style.css",
+  "./navbar.css",
   "./script.js",
   "./contacts.js",
+  "./fileviewer.js",
+  "./swipe.js",
+  "./auth/auth.js",
   "./manifest.json",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
