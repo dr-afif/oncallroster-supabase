@@ -289,12 +289,7 @@ function renderDashboard(data, sourceLabel, query = '') {
 
     names.forEach((name, i) => {
       let phone = phones[i] || '-';
-      let displayName = name;
-      
-      const subLabel = subLabels[i];
-      if (subLabel) {
-        displayName = `${name} (${subLabel})`;
-      }
+      const subLabel = subLabels[i] || '';
 
       // Fix: If phone is missing or '-', try to match from contacts pool
       if (phone === '-' || !phone || phone === 'Unknown') {
@@ -304,7 +299,7 @@ function renderDashboard(data, sourceLabel, query = '') {
         }
       }
 
-      grouped[main][sub].push({ name: displayName, phone });
+      grouped[main][sub].push({ name, subLabel, phone });
     });
   });
 
@@ -319,6 +314,7 @@ function renderDashboard(data, sourceLabel, query = '') {
         mainDept.toLowerCase().includes(query) ||
         subDept.toLowerCase().includes(query) ||
         d.name.toLowerCase().includes(query) ||
+        d.subLabel.toLowerCase().includes(query) ||
         d.phone.includes(query)
       );
 
@@ -326,8 +322,8 @@ function renderDashboard(data, sourceLabel, query = '') {
         if (subDept !== 'General' && subDept !== mainDept) {
           subHtml += `<h3>${highlightText(subDept, query)}</h3>`;
         }
-        filteredDoctors.forEach(({ name, phone }) => {
-          subHtml += renderDoctorRow(highlightText(name, query), highlightText(phone, query));
+        filteredDoctors.forEach(({ name, subLabel, phone }) => {
+          subHtml += renderDoctorRow(highlightText(name, query), highlightText(phone, query), highlightText(subLabel, query));
         });
       }
     });
@@ -353,14 +349,17 @@ function renderDashboard(data, sourceLabel, query = '') {
   container.innerHTML = html || `<p class="p-8 text-center text-muted">No results found for "${query}"</p>`;
 }
 
-function renderDoctorRow(name, phone) {
+function renderDoctorRow(name, phone, subLabel = '') {
   const cleanPhone = phone ? phone.replace(/\D/g, '') : '';
   const tel = cleanPhone ? `tel:${phone}` : '#';
   const wa = cleanPhone ? `https://wa.me/6${cleanPhone}` : '#';
 
+  const subLabelHtml = subLabel ? `<div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 2px;">${subLabel}</div>` : '';
+
   return `
         <div class="doctor-row">
             <div class="doctor-info">
+                ${subLabelHtml}
                 <strong>${name}</strong>
                 <span>${phone || 'No phone'}</span>
             </div>
