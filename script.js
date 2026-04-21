@@ -285,9 +285,16 @@ function renderDashboard(data, sourceLabel, query = '') {
 
     const names = row.merged_names ? row.merged_names.split('\n') : [];
     const phones = row.merged_phones ? row.merged_phones.split('\n') : [];
+    const subLabels = row.sub_labels || [];
 
     names.forEach((name, i) => {
       let phone = phones[i] || '-';
+      let displayName = name;
+      
+      const subLabel = subLabels[i];
+      if (subLabel) {
+        displayName = `${name} (${subLabel})`;
+      }
 
       // Fix: If phone is missing or '-', try to match from contacts pool
       if (phone === '-' || !phone || phone === 'Unknown') {
@@ -297,7 +304,7 @@ function renderDashboard(data, sourceLabel, query = '') {
         }
       }
 
-      grouped[main][sub].push({ name, phone });
+      grouped[main][sub].push({ name: displayName, phone });
     });
   });
 
