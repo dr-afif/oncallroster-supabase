@@ -43,7 +43,7 @@
   justify-content: space-between;
   padding: 0 1.25rem;
   border-bottom: 1px solid var(--border);
-  background: rgba(99, 102, 241, 0.03);
+  background: rgba(99, 102, 241, 0.08); /* Slightly darker for better distinction */
   position: relative;
 }
 
