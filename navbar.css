@@ -381,6 +381,26 @@ body {
   color: var(--text-muted);
 }
 
+.clear-search-btn {
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+}
+
+.clear-search-btn:hover {
+  color: var(--primary);
+}
+
 .contact-icons {
   display: flex;
   gap: 0.6rem;

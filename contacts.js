@@ -117,7 +117,29 @@ async function fetchContacts() {
   }
 }
 
+function toggleClearBtn() {
+  const input = document.getElementById('global-search-input');
+  const btn = document.getElementById('clear-search-btn');
+  if (input && btn) {
+    if (input.value.length > 0) {
+      btn.classList.remove('hidden');
+    } else {
+      btn.classList.add('hidden');
+    }
+  }
+}
+
+function clearSearch() {
+  const input = document.getElementById('global-search-input');
+  if (input) {
+    input.value = '';
+    handleSearch();
+    input.focus();
+  }
+}
+
 function handleSearch() {
+  toggleClearBtn();
   const query = document.getElementById('global-search-input')?.value.toLowerCase() || '';
   renderDepartments(allContactsData, query);
 }
