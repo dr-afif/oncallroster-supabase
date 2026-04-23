@@ -409,9 +409,16 @@ async function shareCardAsImage(cardId, deptName) {
         if (child.tagName === 'H3') {
           shareText += `\n*${child.textContent.trim()}*\n`;
         } else if (child.classList.contains('doctor-row')) {
+          const subLabelEl = child.querySelector('.doctor-info div');
+          const subLabelInfo = subLabelEl ? subLabelEl.textContent.trim() : '';
           const nameInfo = child.querySelector('strong')?.textContent.trim() || '';
           const phoneInfo = child.querySelector('span')?.textContent.trim() || '';
-          shareText += `${nameInfo} - ${phoneInfo}\n`;
+          
+          if (subLabelInfo) {
+            shareText += `_${subLabelInfo}_\n${nameInfo} - ${phoneInfo}\n\n`;
+          } else {
+            shareText += `${nameInfo} - ${phoneInfo}\n`;
+          }
         }
       });
     }
