@@ -1,4 +1,4 @@
-const CACHE_NAME = "roster-cache-v16"; // Bumped to kill stale Auth0-era service worker
+const CACHE_NAME = "roster-cache-v17"; // Bumped for v2.1.0 updates
 const urlsToCache = [
   "./",
   "./app-config.js",
