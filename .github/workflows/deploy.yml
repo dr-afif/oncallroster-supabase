@@ -40,9 +40,10 @@ jobs:
           CLEAN_URL=$(echo "$SUPABASE_URL" | tr -d '\r\n[:space:]')
           CLEAN_KEY=$(echo "$SUPABASE_ANON_KEY" | tr -d '\r\n[:space:]')
 
-          # Inject secrets into app-config.js using sed to preserve other configurations (like APP_VERSION)
-          sed -i "s|SUPABASE_URL: \".*\"|SUPABASE_URL: \"$CLEAN_URL\"|" app-config.js
-          sed -i "s|SUPABASE_ANON_KEY: \".*\"|SUPABASE_ANON_KEY: \"$CLEAN_KEY\"|" app-config.js
+          # Inject secrets into app-config.js using sed on the template file
+          cp app-config.template.js app-config.js
+          sed -i "s|{{SUPABASE_URL}}|$CLEAN_URL|" app-config.js
+          sed -i "s|{{SUPABASE_ANON_KEY}}|$CLEAN_KEY|" app-config.js
           
           if [ ! -s app-config.js ]; then
             echo "❌ ERROR: app-config.js is empty or was not created."
