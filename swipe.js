@@ -45,6 +45,18 @@
         if (Math.abs(dx) < SWIPE_THRESHOLD) return;
         if (Math.abs(dx) < Math.abs(dy) * H_TO_V_RATIO) return;
 
+        // Ignore swipe if the target is inside a horizontally scrollable container
+        let target = e.target;
+        while (target && target !== document.body) {
+            if (target.scrollWidth > target.clientWidth) {
+                const overflowX = window.getComputedStyle(target).overflowX;
+                if (overflowX === 'auto' || overflowX === 'scroll') {
+                    return;
+                }
+            }
+            target = target.parentElement;
+        }
+
         if (dx < 0 && currentIndex < pages.length - 1) {
             navigate(pages[currentIndex + 1], 'next');
         } else if (dx > 0 && currentIndex > 0) {

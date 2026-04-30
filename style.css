@@ -35,6 +35,7 @@
   overflow: hidden;
   box-shadow: var(--shadow-premium);
   transition: var(--transition);
+  scroll-margin-top: 160px; /* Account for sticky header + chips */
 }
 
 .card-header {

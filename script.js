@@ -326,14 +326,18 @@ function renderDashboard(data, sourceLabel, query = '') {
   });
 
   let html = '';
+  const renderedDepts = [];
   deptsInOrder.forEach(mainDept => {
     const subGroups = grouped[mainDept];
     if (!subGroups) return;
     let subHtml = '';
 
+    const displayName = (window._deptNames && window._deptNames[mainDept]) || mainDept;
+
     Object.entries(subGroups).forEach(([subDept, doctors]) => {
       const filteredDoctors = doctors.filter(d =>
         mainDept.toLowerCase().includes(query) ||
+        displayName.toLowerCase().includes(query) ||
         subDept.toLowerCase().includes(query) ||
         d.name.toLowerCase().includes(query) ||
         d.subLabel.toLowerCase().includes(query) ||
@@ -351,8 +355,10 @@ function renderDashboard(data, sourceLabel, query = '') {
     });
 
     if (subHtml) {
+      renderedDepts.push(mainDept);
       const displayName = (window._deptNames && window._deptNames[mainDept]) || mainDept;
-      const cardId = `dept-card-${mainDept.replace(/\s+/g, '-')}`;
+      const safeId = mainDept.replace(/[^a-zA-Z0-9]/g, '-');
+      const cardId = `dept-card-${safeId}`;
       
       html += `
                 <div class="doctor-card" id="${cardId}">
@@ -369,6 +375,17 @@ function renderDashboard(data, sourceLabel, query = '') {
   });
 
   container.innerHTML = html || `<p class="p-8 text-center text-muted">No results found for "${query}"</p>`;
+
+  // Chips: show when not searching, hide when filtering
+  const chipsBar = document.getElementById('dept-chips-bar');
+  if (chipsBar) {
+    if (query) {
+      chipsBar.classList.add('hidden');
+    } else {
+      chipsBar.classList.remove('hidden');
+      renderChips(renderedDepts);
+    }
+  }
 }
 
 function renderDoctorRow(name, phone, subLabel = '') {
@@ -395,6 +412,137 @@ function renderDoctorRow(name, phone, subLabel = '') {
             </div>
         </div>
     `;
+}
+
+// --- Department Quick-Jump Chips ---
+function renderChips(depts) {
+  const bar = document.getElementById('dept-chips-bar');
+  if (!bar) return;
+
+  if (!depts || depts.length === 0) {
+    bar.innerHTML = '';
+    return;
+  }
+
+  bar.innerHTML = depts.map(deptId => {
+    const displayName = (window._deptNames && window._deptNames[deptId]) || deptId;
+    const safeId = deptId.replace(/[^a-zA-Z0-9]/g, '-');
+    const chipId = `chip-${safeId}`;
+    const cardId = `dept-card-${safeId}`;
+    return `<button class="dept-chip" id="${chipId}" onclick="jumpToDept('${cardId}', '${chipId}')">${displayName}</button>`;
+  }).join('');
+
+  if (!bar.dataset.dragInit) {
+    bar.dataset.dragInit = 'true';
+    let isDown = false;
+    let startX;
+    let scrollLeft;
+    let dragged = false;
+
+    bar.addEventListener('mousedown', (e) => {
+      isDown = true;
+      dragged = false;
+      bar.style.cursor = 'grabbing';
+      startX = e.pageX - bar.offsetLeft;
+      scrollLeft = bar.scrollLeft;
+    });
+    bar.addEventListener('mouseleave', () => {
+      isDown = false;
+      bar.style.cursor = 'grab';
+    });
+    bar.addEventListener('mouseup', () => {
+      isDown = false;
+      bar.style.cursor = 'grab';
+    });
+    bar.addEventListener('mousemove', (e) => {
+      if (!isDown) return;
+      e.preventDefault();
+      dragged = true;
+      const x = e.pageX - bar.offsetLeft;
+      const walk = (x - startX) * 2; // scroll faster
+      bar.scrollLeft = scrollLeft - walk;
+    });
+    // Prevent click on chips if we were dragging
+    bar.addEventListener('click', (e) => {
+      if (dragged) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    }, true); // use capture phase
+  }
+
+  setupChipObserver();
+}
+
+window._isJumping = false;
+window._jumpTimer = null;
+
+function jumpToDept(cardId, chipId) {
+  triggerHaptic();
+  const card = document.getElementById(cardId);
+  if (!card) {
+    console.warn(`Card not found: ${cardId}`);
+    return;
+  }
+  
+  // Temporarily disable the scroll observer so it doesn't fight our jump
+  window._isJumping = true;
+  clearTimeout(window._jumpTimer);
+  window._jumpTimer = setTimeout(() => {
+    window._isJumping = false;
+  }, 1000); // 1 second is enough to cover smooth scroll duration
+  
+  const header = document.getElementById('app-header');
+  const offset = header ? header.offsetHeight + 20 : 170;
+  
+  // Use offsetTop for a stable absolute position
+  const targetTop = card.offsetTop - offset;
+
+  // Scroll the page to the card
+  document.documentElement.scrollTo({ top: targetTop, behavior: 'smooth' });
+
+  // Just update the visual highlight immediately
+  document.querySelectorAll('.dept-chip').forEach(c => c.classList.remove('active'));
+  const chip = document.getElementById(chipId);
+  if (chip) {
+    chip.classList.add('active');
+    
+    // Smoothly scroll the chip bar to center this chip
+    const bar = document.getElementById('dept-chips-bar');
+    if (bar) {
+      const scrollPos = (chip.offsetLeft - bar.offsetLeft) - bar.offsetWidth / 2 + chip.offsetWidth / 2;
+      bar.scrollTo({ left: scrollPos, behavior: 'smooth' });
+    }
+  }
+}
+
+function setupChipObserver() {
+  if (window._chipObserver) window._chipObserver.disconnect();
+  let _chipScrollTimer = null;
+  window._chipObserver = new IntersectionObserver((entries) => {
+    if (window._isJumping) return; // Ignore intersections while we are manually jumping
+    
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const rawId = entry.target.id.replace('dept-card-', '');
+        document.querySelectorAll('.dept-chip').forEach(c => c.classList.remove('active'));
+        const chip = document.getElementById(`chip-${rawId}`);
+        if (chip) {
+          chip.classList.add('active');
+          // Only scroll horizontally within the chip bar to avoid any vertical page jumps
+          clearTimeout(_chipScrollTimer);
+          _chipScrollTimer = setTimeout(() => {
+            const bar = document.getElementById('dept-chips-bar');
+            if (bar) {
+              const scrollPos = (chip.offsetLeft - bar.offsetLeft) - bar.offsetWidth / 2 + chip.offsetWidth / 2;
+              bar.scrollTo({ left: scrollPos, behavior: 'smooth' });
+            }
+          }, 100);
+        }
+      }
+    });
+  }, { threshold: 0, rootMargin: '-15% 0px -45% 0px' });
+  document.querySelectorAll('.doctor-card').forEach(card => window._chipObserver.observe(card));
 }
 
 async function shareCardAsImage(cardId, deptName) {
