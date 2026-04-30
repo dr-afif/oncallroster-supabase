@@ -5,8 +5,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>HSAAS On-Call Doctor Dashboard</title>
-  <link rel="stylesheet" href="style.css" />
-  <link rel="stylesheet" href="navbar.css">
+  <link rel="stylesheet" href="style.css?v=2.1.0" />
+  <link rel="stylesheet" href="navbar.css?v=2.1.0">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#6366f1">
   <link rel="icon" href="data:,">
@@ -138,9 +138,17 @@
     <footer id="app-footer">
       <small id="last-updated"></small><br>
       <small>&copy; Dr. Muhammad Afif Abdullah 2025</small><br>
-      <small>Version 2.0</small>
+      <small id="app-version-display">Version 2.0</small>
     </footer>
   </div>
+
+  <!-- Back to Top Button -->
+  <button id="back-to-top" class="hidden-fab" onclick="scrollToTop()" aria-label="Back to top">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="12" y1="19" x2="12" y2="5"></line>
+      <polyline points="5 12 12 5 19 12"></polyline>
+    </svg>
+  </button>
 
   <nav class="bottom-nav">
     <button onclick="location.href='fileviewer.html'">
@@ -166,8 +174,8 @@
   </nav>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-  <script src="script.js" defer></script>
-  <script src="swipe.js" defer></script>
+  <script src="script.js?v=2.1.0" defer></script>
+  <script src="swipe.js?v=2.1.0" defer></script>
   <script>
     function toggleTheme() {
       const root = document.documentElement;

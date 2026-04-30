@@ -612,3 +612,24 @@ async function shareCardAsImage(cardId, deptName) {
     if (shareBtn) shareBtn.style.display = 'flex';
   }
 }
+
+// --- Back to Top FAB ---
+function scrollToTop() {
+  window._isJumping = true; // Disable scroll spy during jump
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  
+  // Re-enable scroll spy after animation
+  setTimeout(() => {
+    window._isJumping = false;
+  }, 800);
+}
+
+window.addEventListener('scroll', () => {
+  const fab = document.getElementById('back-to-top');
+  if (!fab) return;
+  if (window.scrollY > 300) {
+    fab.classList.remove('hidden-fab');
+  } else {
+    fab.classList.add('hidden-fab');
+  }
+});
