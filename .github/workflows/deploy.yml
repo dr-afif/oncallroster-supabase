@@ -40,8 +40,9 @@ jobs:
           CLEAN_URL=$(echo "$SUPABASE_URL" | tr -d '\r\n[:space:]')
           CLEAN_KEY=$(echo "$SUPABASE_ANON_KEY" | tr -d '\r\n[:space:]')
 
-          # Create app-config.js using printf
-          printf 'window.APP_CONFIG = {\n  SUPABASE_URL: "%s",\n  SUPABASE_ANON_KEY: "%s",\n  REFRESH_INTERVAL: 0\n};\n' "$CLEAN_URL" "$CLEAN_KEY" > app-config.js
+          # Inject secrets into app-config.js using sed to preserve other configurations (like APP_VERSION)
+          sed -i "s|SUPABASE_URL: \".*\"|SUPABASE_URL: \"$CLEAN_URL\"|" app-config.js
+          sed -i "s|SUPABASE_ANON_KEY: \".*\"|SUPABASE_ANON_KEY: \"$CLEAN_KEY\"|" app-config.js
           
           if [ ! -s app-config.js ]; then
             echo "❌ ERROR: app-config.js is empty or was not created."
